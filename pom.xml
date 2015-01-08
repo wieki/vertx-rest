@@ -3,17 +3,16 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>eu.socie</groupId>
 	<artifactId>rest</artifactId>
 	<packaging>jar</packaging>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Project - rest</name>
-	<url>http://maven.apache.org</url>
+	<url>https://github.com/wieki/vertx-rest</url>
 
 	<parent>
-		<groupId>org.sonatype.oss</groupId>
-		<artifactId>oss-parent</artifactId>
-		<version>7</version>
+		<groupId>eu.socie</groupId>
+		<artifactId>socie-oss</artifactId>
+		<version>1</version>
 	</parent>
 
 	<properties>
@@ -43,7 +42,6 @@
 		<junit.version>4.11</junit.version>
 
 		<!--Plugin versions -->
-		<maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
 		<maven.resources.plugin.version>2.6</maven.resources.plugin.version>
 		<maven.clean.plugin.version>2.5</maven.clean.plugin.version>
 		<maven.vertx.plugin.version>2.0.11-final</maven.vertx.plugin.version>
@@ -52,6 +50,9 @@
 		<maven.surefire.report.plugin.version>2.14</maven.surefire.report.plugin.version>
 		<maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
 		<maven.dependency.plugin.version>2.7</maven.dependency.plugin.version>
+		
+		<yoke.version>2.0.9</yoke.version>
+		<mongo.async.persistor.version>0.0.1-SNAPSHOT</mongo.async.persistor.version>
 	</properties>
 
 	<repositories>
@@ -102,14 +103,14 @@
 		<dependency>
 			<groupId>com.jetdrone</groupId>
 			<artifactId>yoke</artifactId>
-			<version>2.0.8</version>
+			<version>${yoke.version}</version>
 			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>eu.socie</groupId>
 			<artifactId>mongo-async-persistor</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>${mongo.async.persistor.version}</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -158,15 +159,6 @@
 			</plugin>
 
 			<!-- Other plugins required by the build -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>${maven.compiler.plugin.version}</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-				</configuration>
-			</plugin>
 			<plugin>
 				<artifactId>maven-resources-plugin</artifactId>
 				<version>${maven.resources.plugin.version}</version>
@@ -309,4 +301,10 @@
 			</plugin>
 		</plugins>
 	</reporting>
+	<scm>
+		<url>https://github.com/wieki/vertx-rest.git</url>
+	</scm>
+	<issueManagement>
+		<url>https://github.com/wieki/vertx-rest/issues</url>
+	</issueManagement>
 </project>
