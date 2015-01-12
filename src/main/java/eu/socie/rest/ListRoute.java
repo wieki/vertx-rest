@@ -97,17 +97,14 @@ public abstract class ListRoute extends Route {
 
 	/**
 	 * Create a search document from the request. If modifications to the
-	 * document are necessary before submitting the query override this method
+	 * document are necessary before submitting the query override this method.
+	 * The method now only creates an empty search document (which will return all doucments)
 	 * 
-	 * @param request is the http request that may contain a Json query document as body
+	 * @param request is the http request
 	 * @return a json document that will be used for searching the database
 	 */
 	protected JsonObject createSearchDocument(YokeRequest request) {
-		if (request.body() == null) {
-			return new JsonObject();
-		} else {
-			return request.body();
-		}
+		return new JsonObject();
 	}
 
 	/**
