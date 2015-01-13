@@ -21,6 +21,9 @@ public class UploadRoute extends Route {
 		super(path);
 		
 		this.eventBus = eventBus;
+		
+		get((r) -> handleUpload(r));
+		post((r) -> handleUpload(r));
 	}
 
 	public void handleUpload(YokeRequest upload) {
@@ -34,6 +37,7 @@ public class UploadRoute extends Route {
 
 		}
 
+		upload.response().setStatusCode(200).end();
 	}
 
 }

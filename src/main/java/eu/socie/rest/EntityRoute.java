@@ -1,6 +1,7 @@
 package eu.socie.rest;
 
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
@@ -18,13 +19,27 @@ public abstract class EntityRoute extends Route {
 	private EventBus eventBus;
 
 	private String collection;
+	
+	private String idParam = "id";
 
 	// TODO move to String
 	private static final String NOT_FOUND = "Entity with id %s was not found";
 
+	public EntityRoute(String collection, String path, EventBus eventBus, String id){
+		super(path);
+
+		this.idParam = id;
+		
+		init(collection, eventBus);
+	}
+	
 	public EntityRoute(String collection, String path, EventBus eventBus) {
 		super(path);
 
+		init(collection, eventBus);
+	}
+	
+	private void init(String collection, EventBus eventBus){
 		this.eventBus = eventBus;
 
 		this.collection = collection;
@@ -40,10 +55,10 @@ public abstract class EntityRoute extends Route {
 		return null;
 	}
 
-	protected final JsonObject createDeleteDocument(YokeRequest request) {
+	protected JsonObject createDeleteDocument(YokeRequest request) {
 		JsonObject doc = new JsonObject();
 
-		String id = request.getParameter("id");
+		String id = request.getParameter(idParam);
 
 		doc.putObject("_id", MongoUtil.createIdReference(id));
 
@@ -69,11 +84,21 @@ public abstract class EntityRoute extends Route {
 
 	}
 
-	protected void createUpdateRequest(YokeRequest request) {
+	protected JsonObject createUpdateDocument(YokeRequest request){
+		JsonObject updateDoc = request.body();
+		if (!updateDoc.containsField("_id")){
+			String id = request.getParameter(getIdParam());
+			updateDoc.putString("_id", id);
+		}
+		
+		return updateDoc;
+	}
+	
+	protected final void createUpdateRequest(YokeRequest request) {
 
 		JsonObject create = new JsonObject();
 
-		JsonObject doc = request.body();
+		JsonObject doc = createUpdateDocument(request);
 
 		create.putString("collection", collection);
 
@@ -91,7 +116,7 @@ public abstract class EntityRoute extends Route {
 	protected JsonObject createSearchDocument(YokeRequest request) {
 		JsonObject doc = new JsonObject();
 
-		String id = request.getParameter("id");
+		String id = request.getParameter(getIdParam());
 
 		doc.putString("_id", id);
 
@@ -184,4 +209,12 @@ public abstract class EntityRoute extends Route {
 		}
 	}
 
+	/**
+	 * Return the parameter that is set to be the id of the object. If it's not changed it will return 'id'
+	 * @return the param
+	 */
+	public String getIdParam(){
+		return idParam;
+	}
+	
 }
