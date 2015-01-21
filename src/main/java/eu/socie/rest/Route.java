@@ -2,9 +2,12 @@ package eu.socie.rest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.eventbus.ReplyException;
 
 import com.jetdrone.vertx.yoke.middleware.Router;
@@ -28,7 +31,7 @@ public class Route {
 	private Handler<YokeRequest> get;
 	private Handler<YokeRequest> patch;
 	private Handler<YokeRequest> delete;
-	
+
 	// TODO Make this a configuration parameter
 	protected static final long TIMEOUT = 2000;
 
@@ -40,22 +43,29 @@ public class Route {
 	public static final String OPTIONS = "OPTIONS";
 	public static final String HEAD = "HEAD";
 
-	public static int SUCCESS_OK = 200;
-	public static int SUCCESS_CREATED = 201;
-	public static int SUCCESS_NO_CONTENT = 204;
+	public final static int SUCCESS_OK = 200;
+	public final static int SUCCESS_CREATED = 201;
+	public final static int SUCCESS_NO_CONTENT = 204;
 
-	public static int ERROR_CLIENT_BAD_REQUEST = 400;
-	public static int ERROR_CLIENT_UNAUTHORIZED = 401;
-	public static int ERROR_CLIENT_FORBIDDEN = 403;
-	public static int ERROR_CLIENT_NOT_FOUND = 404;
-	public static int ERROR_CLIENT_METHOD_NOT_ALLOWED = 405;
+	public final static int ERROR_CLIENT_BAD_REQUEST = 400;
+	public final static int ERROR_CLIENT_UNAUTHORIZED = 401;
+	public final static int ERROR_CLIENT_FORBIDDEN = 403;
+	public final static int ERROR_CLIENT_NOT_FOUND = 404;
+	public final static int ERROR_CLIENT_METHOD_NOT_ALLOWED = 405;
+	public final static int ERROR_CLIENT_METHOD_UNACCEPTABLE = 406;
 
-	public static int ERROR_SERVER_GENERAL_ERROR = 500;
-	public static int ERROR_SERVER_NOT_IMPLEMENTED = 501;
-	public static int ERROR_SERVER_SERVICE_UNAVAILABLE = 503;
+	public final static int ERROR_SERVER_GENERAL_ERROR = 500;
+	public final static int ERROR_SERVER_NOT_IMPLEMENTED = 501;
+	public final static int ERROR_SERVER_SERVICE_UNAVAILABLE = 503;
+
+	public final static String ERROR_CLIENT_VERSION_MSG = "No version in accept header specified";
+
+	private Pattern versionPattern;
 
 	public Route(String path) {
 		this.path = path;
+
+		versionPattern = Pattern.compile("v[0-9]+");
 	}
 
 	public String getPath() {
@@ -149,8 +159,11 @@ public class Route {
 
 	/**
 	 * This method will return the available methods on the url
-	 * @param verbs are the methods available to call on this url
-	 * @param request is the request to reply the available methods to
+	 * 
+	 * @param verbs
+	 *            are the methods available to call on this url
+	 * @param request
+	 *            is the request to reply the available methods to
 	 */
 	protected void handleOptions(String verbs, YokeRequest request) {
 		MultiMap map = request.response().headers();
@@ -198,7 +211,7 @@ public class Route {
 		response.setStatusCode(ERROR_CLIENT_METHOD_NOT_ALLOWED).end();
 
 	}
-	
+
 	protected void replyError(YokeRequest request, int code,
 			ReplyException exception) {
 
@@ -207,21 +220,33 @@ public class Route {
 
 		request.response().setChunked(true).setStatusCode(code).end(error);
 	}
-	
+
 	protected void replyError(YokeRequest request, int code, String message) {
 
-		String error = String.format("%d : %s", code,
-				message);
+		String error = String.format("%d : %s", code, message);
 
 		request.response().setChunked(true).setStatusCode(code).end(error);
 	}
 
-
 	protected void addJsonContentHeader(YokeRequest request) {
 		YokeResponse response = request.response();
 		response.headers().add("Content-Type", "application/json");
-			
+
 	}
-	
-	
+
+	protected String getVersionFromHeader(YokeRequest request) {
+		String acceptHeader = request.getHeader("Accept");
+		String version = "";
+
+		Matcher matcher = versionPattern.matcher(acceptHeader);
+		if (matcher.find()) {
+			version = matcher.group(0);
+		} else {
+			request.response().setStatusCode(400).end(ERROR_CLIENT_VERSION_MSG);
+			throw new VertxException(ERROR_CLIENT_VERSION_MSG);
+		}
+
+		return version;
+	}
+
 }

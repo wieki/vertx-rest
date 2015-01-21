@@ -52,7 +52,7 @@
 		<maven.dependency.plugin.version>2.7</maven.dependency.plugin.version>
 		
 		<yoke.version>2.0.9</yoke.version>
-		<mongo.async.persistor.version>0.0.1-SNAPSHOT</mongo.async.persistor.version>
+		<mongo.async.persistor.version>0.1</mongo.async.persistor.version>
 	</properties>
 
 	<repositories>

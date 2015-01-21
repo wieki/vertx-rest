@@ -1,7 +1,8 @@
 package eu.socie.rest;
 
+import static eu.socie.mongo_async_persistor.util.MongoUtil.createIdReference;
+
 import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
@@ -88,18 +89,24 @@ public abstract class EntityRoute extends Route {
 		JsonObject updateDoc = request.body();
 		if (!updateDoc.containsField("_id")){
 			String id = request.getParameter(getIdParam());
-			updateDoc.putString("_id", id);
+			//updateDoc.putString("_id", id);
+			updateDoc.putObject("_id", createIdReference(id));
 		}
 		
 		return updateDoc;
 	}
 	
+	protected JsonObject validateAndConvertDocument(String version, JsonObject doc){
+		return doc;
+	}
+	
 	protected final void createUpdateRequest(YokeRequest request) {
-
 		JsonObject create = new JsonObject();
-
-		JsonObject doc = createUpdateDocument(request);
-
+		
+		String version = getVersionFromHeader(request);
+		
+		JsonObject doc = validateAndConvertDocument(version, createUpdateDocument(request));
+	
 		create.putString("collection", collection);
 
 		create.putObject("document", doc);
@@ -118,7 +125,8 @@ public abstract class EntityRoute extends Route {
 
 		String id = request.getParameter(getIdParam());
 
-		doc.putString("_id", id);
+		doc.putObject("_id", createIdReference(id));
+		//doc.putString("_id", id);
 
 		return doc;
 	}
@@ -183,7 +191,11 @@ public abstract class EntityRoute extends Route {
 
 	}
 
-	protected void respondFindResults(AsyncResult<Message<JsonArray>> result,
+	protected JsonArray convertFindResults(String version, JsonArray results){
+		return results;
+	}
+	
+	protected final void respondFindResults(AsyncResult<Message<JsonArray>> result,
 			YokeRequest request) {
 
 		if (result.succeeded()) {
@@ -195,12 +207,16 @@ public abstract class EntityRoute extends Route {
 				replyError(request, ERROR_CLIENT_NOT_FOUND,
 						String.format(NOT_FOUND, id));
 			}
-
+			
 			addJsonContentHeader(request);
 
+			String version = getVersionFromHeader(request);
+			
+			JsonArray convertedResults = convertFindResults(version, results);
+			
 			// log.debug("Returned results from database: " + results.size());
 			request.response().setChunked(true)
-					.write(results.get(0).toString()).setStatusCode(SUCCESS_OK)
+					.write(convertedResults.get(0).toString()).setStatusCode(SUCCESS_OK)
 					.end();
 
 		} else {

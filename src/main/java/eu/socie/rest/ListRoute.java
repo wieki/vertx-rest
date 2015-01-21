@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
@@ -28,7 +29,7 @@ public abstract class ListRoute extends Route {
 
 	// TODO store localized?
 	public static final String ERROR_ENTITY_EMPTY = "The submitted entity is empty and cannot be stored";
-	private static final String ERROR_DELETE_DOC_EMPTY = "The delete search document is empty, therefore cannot be executed";
+	public static final String ERROR_DELETE_DOC_EMPTY = "The delete search document is empty, therefore cannot be executed";
 
 	public ListRoute(String collection, String path, EventBus eventBus) {
 		super(path);
@@ -69,6 +70,10 @@ public abstract class ListRoute extends Route {
 
 	}
 
+	protected JsonObject convertCreateDocument(String version, JsonObject object){
+		return object;
+	}
+	
 	protected JsonObject createCreateDocument(YokeRequest request) {
 		if (request.body() == null) {
 			replyError(request, ERROR_CLIENT_BAD_REQUEST, ERROR_ENTITY_EMPTY);
@@ -80,7 +85,9 @@ public abstract class ListRoute extends Route {
 	protected final void createCreateRequest(YokeRequest request) {
 		JsonObject create = new JsonObject();
 
-		JsonObject doc = createCreateDocument(request);
+		String version = getVersionFromHeader(request);
+		
+		JsonObject doc = convertCreateDocument(version, createCreateDocument(request));
 
 		create.putString("collection", collection);
 
@@ -98,9 +105,11 @@ public abstract class ListRoute extends Route {
 	/**
 	 * Create a search document from the request. If modifications to the
 	 * document are necessary before submitting the query override this method.
-	 * The method now only creates an empty search document (which will return all doucments)
+	 * The method now only creates an empty search document (which will return
+	 * all doucments)
 	 * 
-	 * @param request is the http request
+	 * @param request
+	 *            is the http request
 	 * @return a json document that will be used for searching the database
 	 */
 	protected JsonObject createSearchDocument(YokeRequest request) {
@@ -201,6 +210,11 @@ public abstract class ListRoute extends Route {
 
 	}
 
+	protected JsonArray convertFindResults(String version, JsonArray results)
+			throws VertxException {
+		return results;
+	}
+
 	protected void respondFindResults(AsyncResult<Message<JsonArray>> result,
 			YokeRequest request) {
 
@@ -208,10 +222,23 @@ public abstract class ListRoute extends Route {
 
 			JsonArray results = result.result().body();
 
+			String version = getVersionFromHeader(request);
+
+			JsonArray convertedResults = null;
+
+			try {
+				convertedResults = convertFindResults(version, results);
+			} catch (VertxException ve) {
+				replyError(request, ERROR_CLIENT_METHOD_UNACCEPTABLE,
+						ve.getMessage());
+				return;
+			}
+
 			// log.debug("Returned results from database: " + results.size());
 			addJsonContentHeader(request);
-			
-			request.response().setChunked(true).write(results.toString())
+
+			request.response().setChunked(true)
+					.write(convertedResults.toString())
 					.setStatusCode(SUCCESS_OK).end();
 
 		} else {
