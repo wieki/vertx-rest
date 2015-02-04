@@ -70,10 +70,10 @@ public abstract class ListRoute extends Route {
 
 	}
 
-	protected JsonObject convertCreateDocument(String version, JsonObject object){
+	protected JsonObject convertCreateDocument(String version, JsonObject object) {
 		return object;
 	}
-	
+
 	protected JsonObject createCreateDocument(YokeRequest request) {
 		if (request.body() == null) {
 			replyError(request, ERROR_CLIENT_BAD_REQUEST, ERROR_ENTITY_EMPTY);
@@ -86,19 +86,26 @@ public abstract class ListRoute extends Route {
 		JsonObject create = new JsonObject();
 
 		String version = getVersionFromHeader(request);
-		
-		JsonObject doc = convertCreateDocument(version, createCreateDocument(request));
 
-		create.putString("collection", collection);
+		try {
+			JsonObject doc = convertCreateDocument(version,
+					createCreateDocument(request));
 
-		create.putObject("document", doc);
+			create.putString("collection", collection);
 
-		eventBus.sendWithTimeout(
-				AsyncMongoPersistor.EVENT_DB_CREATE,
-				create,
-				TIMEOUT,
-				(AsyncResult<Message<JsonObject>> results) -> respondCreateResults(
-						results, request));
+			create.putObject("document", doc);
+
+			eventBus.sendWithTimeout(
+					AsyncMongoPersistor.EVENT_DB_CREATE,
+					create,
+					TIMEOUT,
+					(AsyncResult<Message<JsonObject>> results) -> respondCreateResults(
+							results, request));
+		} catch (VertxException ve) {
+			replyError(request, ERROR_CLIENT_METHOD_UNACCEPTABLE,
+					ve.getMessage());
+			return;
+		}
 
 	}
 
