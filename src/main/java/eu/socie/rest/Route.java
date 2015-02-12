@@ -61,12 +61,13 @@ public class Route {
 	public final static String ERROR_CLIENT_VERSION_MSG = "No version in accept header specified";
 
 	private Pattern versionPattern;
-
+	
 	public Route(String path) {
 		this.path = path;
 
 		versionPattern = Pattern.compile("v[0-9]+");
 	}
+	
 
 	public String getPath() {
 		return path;

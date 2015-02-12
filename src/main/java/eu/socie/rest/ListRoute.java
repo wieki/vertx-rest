@@ -70,7 +70,7 @@ public abstract class ListRoute extends Route {
 
 	}
 
-	protected JsonObject convertCreateDocument(String version, JsonObject object) {
+	protected JsonObject validateAndConvertCreateDocument(String version, JsonObject object) {
 		return object;
 	}
 
@@ -88,7 +88,7 @@ public abstract class ListRoute extends Route {
 		String version = getVersionFromHeader(request);
 
 		try {
-			JsonObject doc = convertCreateDocument(version,
+			JsonObject doc = validateAndConvertCreateDocument(version,
 					createCreateDocument(request));
 
 			create.putString("collection", collection);
@@ -243,6 +243,7 @@ public abstract class ListRoute extends Route {
 
 			// log.debug("Returned results from database: " + results.size());
 			addJsonContentHeader(request);
+			
 
 			request.response().setChunked(true)
 					.write(convertedResults.toString())
