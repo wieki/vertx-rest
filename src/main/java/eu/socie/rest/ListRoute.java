@@ -17,6 +17,7 @@ import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
 import eu.socie.mongo_async_persistor.AsyncMongoPersistor;
+import eu.socie.rest.schema.ProcessReportEncoder;
 
 public abstract class ListRoute extends Route {
 
@@ -90,7 +91,9 @@ public abstract class ListRoute extends Route {
 				return object;
 			} else {
 				// FIXME format processing report for better human reading
-				throw new VertxException(report.toString());
+				JsonObject obj = ProcessReportEncoder.encode(report);
+				
+				throw new VertxException(obj.toString());
 			}
 		} 
 		

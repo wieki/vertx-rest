@@ -249,7 +249,7 @@ public class Route {
 
 	protected void replyError(YokeRequest request, int code, String message) {
 
-		String error = String.format("%d : %s", code, message);
+		String error = String.format("%s", message);
 
 		request.response().setChunked(true).setStatusCode(code).end(error);
 	}
