@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxException;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -11,6 +12,7 @@ import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
+import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
@@ -31,9 +33,19 @@ public abstract class ListRoute extends Route {
 	public static final String ERROR_ENTITY_EMPTY = "The submitted entity is empty and cannot be stored";
 	public static final String ERROR_DELETE_DOC_EMPTY = "The delete search document is empty, therefore cannot be executed";
 
-	public ListRoute(String collection, String path, EventBus eventBus) {
-		super(path);
+	public ListRoute(String collection, String path, String jsonSchema, Vertx vertx){
+		super(path, jsonSchema, vertx);
+		
+		init(collection, vertx.eventBus());
+	}
+	
+	public ListRoute(String collection, String path, Vertx vertx) {
+		super(path, vertx);
 
+		init(collection, vertx.eventBus());
+	}
+	
+	private void init(String collection, EventBus eventBus) {
 		this.eventBus = eventBus;
 
 		this.collection = collection;
@@ -71,6 +83,17 @@ public abstract class ListRoute extends Route {
 	}
 
 	protected JsonObject validateAndConvertCreateDocument(String version, JsonObject object) {
+		if (validator != null) {
+			// TODO include version checks and automatic handling
+			ProcessingReport report = validator.validate(object);
+			if (report.isSuccess()) {
+				return object;
+			} else {
+				// FIXME format processing report for better human reading
+				throw new VertxException(report.toString());
+			}
+		} 
+		
 		return object;
 	}
 

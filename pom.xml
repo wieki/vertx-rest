@@ -50,9 +50,10 @@
 		<maven.surefire.report.plugin.version>2.14</maven.surefire.report.plugin.version>
 		<maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
 		<maven.dependency.plugin.version>2.7</maven.dependency.plugin.version>
-		
+
 		<yoke.version>2.0.11</yoke.version>
 		<mongo.async.persistor.version>0.2-SNAPSHOT</mongo.async.persistor.version>
+		<json.validator.version>2.2.6</json.validator.version>
 	</properties>
 
 	<repositories>
@@ -112,6 +113,13 @@
 			<artifactId>mongo-async-persistor</artifactId>
 			<version>${mongo.async.persistor.version}</version>
 			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.fge</groupId>
+			<artifactId>json-schema-validator</artifactId>
+			<version>${json.validator.version}</version>
+			<scope>compile</scope>
 		</dependency>
 
 	</dependencies>

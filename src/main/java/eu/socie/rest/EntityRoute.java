@@ -3,6 +3,7 @@ package eu.socie.rest;
 import static eu.socie.mongo_async_persistor.util.MongoUtil.createIdReference;
 
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
@@ -26,18 +27,18 @@ public abstract class EntityRoute extends Route {
 	// TODO move to String
 	private static final String NOT_FOUND = "Entity with id %s was not found";
 
-	public EntityRoute(String collection, String path, EventBus eventBus, String id){
-		super(path);
+	public EntityRoute(String collection, String path, Vertx vertx, String id){
+		super(path, vertx);
 
 		this.idParam = id;
 		
-		init(collection, eventBus);
+		init(collection, vertx.eventBus());
 	}
 	
-	public EntityRoute(String collection, String path, EventBus eventBus) {
-		super(path);
+	public EntityRoute(String collection, String path, Vertx vertx) {
+		super(path, vertx);
 
-		init(collection, eventBus);
+		init(collection, vertx.eventBus());
 	}
 	
 	private void init(String collection, EventBus eventBus){

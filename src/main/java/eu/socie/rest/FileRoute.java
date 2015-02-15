@@ -1,6 +1,7 @@
 package eu.socie.rest;
 
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
@@ -15,10 +16,10 @@ public class FileRoute extends Route {
 
 	EventBus eventBus;
 
-	public FileRoute(String path, EventBus eventBus) {
-		super(path);
+	public FileRoute(String path, Vertx vertx) {
+		super(path,vertx);
 
-		this.eventBus = eventBus;
+		this.eventBus = vertx.eventBus();
 
 		get((r) -> handleFile(r));
 	}

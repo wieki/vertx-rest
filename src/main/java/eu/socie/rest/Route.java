@@ -7,12 +7,15 @@ import java.util.regex.Pattern;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
+import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxException;
 import org.vertx.java.core.eventbus.ReplyException;
 
 import com.jetdrone.vertx.yoke.middleware.Router;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
+
+import eu.socie.rest.schema.JsonSchemaValidator;
 
 /**
  * 
@@ -61,13 +64,35 @@ public class Route {
 	public final static String ERROR_CLIENT_VERSION_MSG = "No version in accept header specified";
 
 	private Pattern versionPattern;
-	
-	public Route(String path) {
+
+	protected JsonSchemaValidator validator;
+	protected Vertx vertx;
+
+	public Route(String path, Vertx vertx) {
 		this.path = path;
 
 		versionPattern = Pattern.compile("v[0-9]+");
+
+		validator = null;
 	}
-	
+
+	/**
+	 * Create an route bound to path and enable schema validation on incoming
+	 * objects. The jsonSchemaPath is based on a resource path
+	 * 
+	 * @param path is relative the path within the URL
+	 * @param jsonSchemaPath
+	 */
+	public Route(String path, String jsonSchemaPath, Vertx vertx) {
+		this.path = path;
+		this.vertx = vertx;
+
+		versionPattern = Pattern.compile("v[0-9]+");
+
+		validator = new JsonSchemaValidator(jsonSchemaPath);
+		// TODO this is async, can be a problem?
+		validator.load(vertx);
+	}
 
 	public String getPath() {
 		return path;
