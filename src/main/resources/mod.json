@@ -1,20 +1,13 @@
 {
-
-  // Java verticle
-  //"main":"eu.socie.PingVerticle",
-
-  // If your module is going to be registered in the Vert.x module registry you will also need the following
-  // mandatory fields
-  "description":"Put description of your module here",
+  "description":"REST Service",
   "licenses": ["The Apache Software License Version 2.0"],
   "author": "Bram Wiekens",
 
-  // Optional fields
   "developers": [],
   "keywords": ["REST", "HATEOAS"],
   "homepage": "",
 
   "auto-redeploy": true,
   
-  "includes": "com.jetdrone~yoke~2.0.11,eu.socie~mongo-async-persistor~0.2-SNAPSHOT"
+  "includes": "com.jetdrone~yoke~2.0.12,eu.socie~mongo-async-persistor~0.2-SNAPSHOT"
 }
