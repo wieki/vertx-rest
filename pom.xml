@@ -51,7 +51,7 @@
 		<maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
 		<maven.dependency.plugin.version>2.7</maven.dependency.plugin.version>
 
-		<yoke.version>2.0.11</yoke.version>
+		<yoke.version>2.0.12</yoke.version>
 		<mongo.async.persistor.version>0.2-SNAPSHOT</mongo.async.persistor.version>
 		<json.validator.version>2.2.6</json.validator.version>
 	</properties>
