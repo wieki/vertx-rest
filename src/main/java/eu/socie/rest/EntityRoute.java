@@ -4,17 +4,20 @@ import static eu.socie.mongo_async_persistor.util.MongoUtil.createIdReference;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
+import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
 import eu.socie.mongo_async_persistor.AsyncMongoPersistor;
 import eu.socie.mongo_async_persistor.util.MongoUtil;
+import eu.socie.rest.schema.ProcessReportEncoder;
 
 public abstract class EntityRoute extends Route {
 
@@ -97,8 +100,20 @@ public abstract class EntityRoute extends Route {
 		return updateDoc;
 	}
 	
-	protected JsonObject validateAndConvertDocument(String version, JsonObject doc){
-		return doc;
+	protected JsonObject validateAndConvertDocument(String version, JsonObject object){
+		if (validator != null) {
+			// TODO include version checks and automatic handling
+			ProcessingReport report = validator.validate(object);
+			if (report.isSuccess()) {
+				return object;
+			} else {
+				JsonObject obj = ProcessReportEncoder.encode(report);
+				
+				throw new VertxException(obj.toString());
+			}
+		} 
+		
+		return object;
 	}
 	
 	protected final void createUpdateRequest(YokeRequest request) {

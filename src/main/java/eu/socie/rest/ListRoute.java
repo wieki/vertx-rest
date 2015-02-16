@@ -90,7 +90,6 @@ public abstract class ListRoute extends Route {
 			if (report.isSuccess()) {
 				return object;
 			} else {
-				// FIXME format processing report for better human reading
 				JsonObject obj = ProcessReportEncoder.encode(report);
 				
 				throw new VertxException(obj.toString());
@@ -270,7 +269,7 @@ public abstract class ListRoute extends Route {
 			// log.debug("Returned results from database: " + results.size());
 			addJsonContentHeader(request);
 			
-
+			
 			request.response().setChunked(true)
 					.write(convertedResults.toString())
 					.setStatusCode(SUCCESS_OK).end();
