@@ -10,12 +10,16 @@ import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxException;
 import org.vertx.java.core.eventbus.ReplyException;
+import org.vertx.java.core.json.JsonElement;
+import org.vertx.java.core.json.JsonObject;
 
+import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.jetdrone.vertx.yoke.middleware.Router;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
 import eu.socie.rest.schema.JsonSchemaValidator;
+import eu.socie.rest.schema.ProcessReportEncoder;
 
 /**
  * 
@@ -275,4 +279,27 @@ public class Route {
 		return version;
 	}
 
+	
+	protected JsonObject validateDocument(JsonObject object) {
+		if (validator != null) {
+			// TODO include version checks and automatic handling
+			ProcessingReport report = validator.validate(object);
+			if (report.isSuccess()) {
+				return object;
+			} else {
+				JsonObject obj = ProcessReportEncoder.encode(report);
+				
+				throw new VertxException(obj.toString());
+			}
+		} 
+	
+		return object;
+	}
+	
+	protected void respondJsonResults(YokeRequest request, JsonElement obj) {
+		addJsonContentHeader(request);
+		
+		request.response().setChunked(true).write(obj.toString())
+				.setStatusCode(SUCCESS_OK).end();
+	}
 }

@@ -12,12 +12,10 @@ import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
-import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
 import eu.socie.mongo_async_persistor.AsyncMongoPersistor;
-import eu.socie.rest.schema.ProcessReportEncoder;
 
 public abstract class ListRoute extends Route {
 
@@ -84,19 +82,8 @@ public abstract class ListRoute extends Route {
 	}
 
 	protected JsonObject validateAndConvertCreateDocument(String version, JsonObject object) {
-		if (validator != null) {
-			// TODO include version checks and automatic handling
-			ProcessingReport report = validator.validate(object);
-			if (report.isSuccess()) {
-				return object;
-			} else {
-				JsonObject obj = ProcessReportEncoder.encode(report);
-				
-				throw new VertxException(obj.toString());
-			}
-		} 
-		
-		return object;
+		// TODO API version differentiation
+		return validateDocument(object);
 	}
 
 	protected JsonObject createCreateDocument(YokeRequest request) {
@@ -266,13 +253,7 @@ public abstract class ListRoute extends Route {
 				return;
 			}
 
-			// log.debug("Returned results from database: " + results.size());
-			addJsonContentHeader(request);
-			
-			
-			request.response().setChunked(true)
-					.write(convertedResults.toString())
-					.setStatusCode(SUCCESS_OK).end();
+			respondJsonResults(request, convertedResults);
 
 		} else {
 			ReplyException ex = (ReplyException) result.cause();
