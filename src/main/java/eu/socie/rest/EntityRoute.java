@@ -185,16 +185,10 @@ public abstract class EntityRoute extends Route {
 			AsyncResult<Message<JsonObject>> results, YokeRequest request) {
 
 		if (results.succeeded()) {
-			JsonObject obj = results.result().body();
-
-			String id = obj.getString("result_id");
 
 			YokeResponse response = request.response();
 
-			response.headers().add("Location",
-					String.format("%s/%s", getBindPath(), id));
-
-			response.setChunked(true).setStatusCode(SUCCESS_CREATED).end();
+			response.setChunked(true).setStatusCode(SUCCESS_OK).end();
 		} else {
 			ReplyException ex = (ReplyException) results.cause();
 			replyError(request, ERROR_SERVER_GENERAL_ERROR, ex);
