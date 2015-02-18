@@ -38,6 +38,7 @@ public abstract class EntityRoute extends Route {
 	public EntityRoute(String collection, String path, String jsonSchema, Vertx vertx) {
 		super(path, jsonSchema, vertx);
 
+	
 		init(collection, vertx.eventBus());
 	}
 	
@@ -50,6 +51,8 @@ public abstract class EntityRoute extends Route {
 	public EntityRoute(String collection, String path, Vertx vertx, String id) {
 		super(path, vertx);
 
+		this.idParam = id;
+		
 		init(collection, vertx.eventBus());
 	}
 	
