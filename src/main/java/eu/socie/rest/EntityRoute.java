@@ -14,7 +14,6 @@ import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
 import eu.socie.mongo_async_persistor.AsyncMongoPersistor;
-import eu.socie.mongo_async_persistor.util.MongoUtil;
 
 public abstract class EntityRoute extends Route {
 
@@ -77,7 +76,7 @@ public abstract class EntityRoute extends Route {
 
 		String id = request.getParameter(idParam);
 
-		doc.putObject("_id", MongoUtil.createIdReference(id));
+		doc.putString("_id", id);
 
 		return doc;
 	}
@@ -141,8 +140,7 @@ public abstract class EntityRoute extends Route {
 
 		String id = request.getParameter(getIdParam());
 
-		doc.putObject("_id", createIdReference(id));
-		//doc.putString("_id", id);
+		doc.putString("_id", id);
 
 		return doc;
 	}
