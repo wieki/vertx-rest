@@ -16,17 +16,13 @@ import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
 import eu.socie.mongo_async_persistor.AsyncMongoPersistor;
+import eu.socie.rest.util.SearchUtil;
 
 public abstract class ListRoute extends Route {
 
 	private EventBus eventBus;
 
 	private String collection;
-
-	private static final String LIMIT = "limit";
-	private static final String SORT = "sort";
-	private static final int ASCENDING = 1;
-	private static final int DESCENDING = -1;
 
 	// TODO store localized?
 	public static final String ERROR_ENTITY_EMPTY = "The submitted entity is empty and cannot be stored";
@@ -142,29 +138,12 @@ public abstract class ListRoute extends Route {
 	 * @param request
 	 */
 	protected final void createSearchRequest(YokeRequest request) {
-		JsonObject find = new JsonObject();
+	
 		JsonObject doc = createSearchDocument(request);
-
+		
 		List<Entry<String, String>> params = request.params().entries();
-
-		for (Entry<String, String> param : params) {
-			String key = param.getKey();
-
-			if (key.equalsIgnoreCase(LIMIT)) {
-				int limit = Integer.parseInt(param.getValue());
-				find.putNumber("limit", limit);
-			}
-
-			if (key.equalsIgnoreCase(SORT)) {
-				JsonObject sortObj = createSortDoc(param.getValue());
-				find.putObject(SORT, sortObj);
-			}
-
-		}
-
-		find.putString("collection", collection);
-
-		find.putObject("document", doc);
+		
+		JsonObject find = SearchUtil.createSearchDocument(doc, collection,params);
 
 		eventBus.sendWithTimeout(
 				AsyncMongoPersistor.EVENT_DB_FIND,
@@ -175,21 +154,7 @@ public abstract class ListRoute extends Route {
 	}
 
 	protected JsonObject createSortDoc(String sortStr) {
-		JsonObject obj = new JsonObject();
-
-		String[] sorts = sortStr.split(",");
-		for (String sort : sorts) {
-			int direction = ASCENDING;
-
-			if (sort.startsWith("-")) {
-				sort = sort.substring(1);
-				direction = DESCENDING;
-			}
-
-			obj.putNumber(sort, direction);
-		}
-
-		return obj;
+		return SearchUtil.createSortDoc(sortStr);
 	}
 
 	protected void respondDeleteResults(AsyncResult<Message<Integer>> results,
