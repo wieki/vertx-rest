@@ -6,7 +6,6 @@ import java.util.Map.Entry;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxException;
-import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.json.JsonArray;
@@ -15,12 +14,9 @@ import org.vertx.java.core.json.JsonObject;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
-import eu.socie.mongo_async_persistor.AsyncMongoPersistor;
 import eu.socie.rest.util.SearchUtil;
 
 public abstract class ListRoute extends Route {
-
-	private EventBus eventBus;
 
 	private String collection;
 
@@ -31,17 +27,16 @@ public abstract class ListRoute extends Route {
 	public ListRoute(String collection, String path, String jsonSchema, Vertx vertx){
 		super(path, jsonSchema, vertx);
 		
-		init(collection, vertx.eventBus());
+		init(collection);
 	}
 	
 	public ListRoute(String collection, String path, Vertx vertx) {
 		super(path, vertx);
 
-		init(collection, vertx.eventBus());
+		init(collection);
 	}
 	
-	private void init(String collection, EventBus eventBus) {
-		this.eventBus = eventBus;
+	private void init(String collection) {
 
 		this.collection = collection;
 
@@ -68,12 +63,7 @@ public abstract class ListRoute extends Route {
 
 		delete.putObject("document", doc);
 
-		eventBus.sendWithTimeout(
-				AsyncMongoPersistor.EVENT_DB_DELETE,
-				delete,
-				TIMEOUT,
-				(AsyncResult<Message<Integer>> results) -> respondDeleteResults(
-						results, request));
+		mongoHelper.sendDelete(delete, results -> respondDeleteResults(results, request));
 
 	}
 
@@ -103,12 +93,8 @@ public abstract class ListRoute extends Route {
 
 			create.putObject("document", doc);
 
-			eventBus.sendWithTimeout(
-					AsyncMongoPersistor.EVENT_DB_CREATE,
-					create,
-					TIMEOUT,
-					(AsyncResult<Message<JsonObject>> results) -> respondCreateResults(
-							results, request));
+			mongoHelper.sendCreate(create, results -> respondCreateResults(results, request));
+
 		} catch (VertxException ve) {
 			replyError(request, ERROR_CLIENT_METHOD_UNACCEPTABLE,
 					ve.getMessage());
@@ -145,12 +131,8 @@ public abstract class ListRoute extends Route {
 		
 		JsonObject find = SearchUtil.createSearchDocument(doc, collection,params);
 
-		eventBus.sendWithTimeout(
-				AsyncMongoPersistor.EVENT_DB_FIND,
-				find,
-				TIMEOUT,
-				(AsyncResult<Message<JsonArray>> results) -> respondFindResults(
-						results, request));
+		mongoHelper.sendFind(find, results -> respondFindResults(results, request));
+		
 	}
 
 	protected JsonObject createSortDoc(String sortStr) {

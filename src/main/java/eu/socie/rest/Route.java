@@ -18,6 +18,7 @@ import com.jetdrone.vertx.yoke.middleware.Router;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
+import eu.socie.rest.mongo.MongoHelper;
 import eu.socie.rest.schema.JsonSchemaValidator;
 import eu.socie.rest.schema.ProcessReportEncoder;
 
@@ -40,7 +41,7 @@ public class Route {
 	private Handler<YokeRequest> delete;
 
 	// TODO Make this a configuration parameter
-	protected static final long TIMEOUT = 2000;
+	public static final long TIMEOUT = 2000;
 
 	public static final String PUT = "PUT";
 	public static final String POST = "POST";
@@ -70,10 +71,13 @@ public class Route {
 	private Pattern versionPattern;
 
 	protected JsonSchemaValidator validator;
+	protected MongoHelper mongoHelper;
 	protected Vertx vertx;
 
 	public Route(String path, Vertx vertx) {
 		this.path = path;
+		
+		mongoHelper = new MongoHelper(vertx);
 
 		versionPattern = Pattern.compile("v[0-9]+");
 
@@ -90,6 +94,8 @@ public class Route {
 	public Route(String path, String jsonSchemaPath, Vertx vertx) {
 		this.path = path;
 		this.vertx = vertx;
+		
+		mongoHelper = new MongoHelper(vertx);
 
 		versionPattern = Pattern.compile("v[0-9]+");
 

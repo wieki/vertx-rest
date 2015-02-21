@@ -4,7 +4,6 @@ import static eu.socie.mongo_async_persistor.util.MongoUtil.createIdReference;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.json.JsonArray;
@@ -13,11 +12,7 @@ import org.vertx.java.core.json.JsonObject;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
-import eu.socie.mongo_async_persistor.AsyncMongoPersistor;
-
 public abstract class EntityRoute extends Route {
-
-	private EventBus eventBus;
 
 	private String collection;
 	
@@ -31,20 +26,20 @@ public abstract class EntityRoute extends Route {
 
 		this.idParam = id;
 		
-		init(collection, vertx.eventBus());
+		init(collection);
 	}
 	
 	public EntityRoute(String collection, String path, String jsonSchema, Vertx vertx) {
 		super(path, jsonSchema, vertx);
 
 	
-		init(collection, vertx.eventBus());
+		init(collection);
 	}
 	
 	public EntityRoute(String collection, String path, Vertx vertx) {
 		super(path, vertx);
 
-		init(collection, vertx.eventBus());
+		init(collection);
 	}
 	
 	public EntityRoute(String collection, String path, Vertx vertx, String id) {
@@ -52,12 +47,10 @@ public abstract class EntityRoute extends Route {
 
 		this.idParam = id;
 		
-		init(collection, vertx.eventBus());
+		init(collection);
 	}
 	
-	private void init(String collection, EventBus eventBus){
-		this.eventBus = eventBus;
-
+	private void init(String collection){
 		this.collection = collection;
 
 		get((r) -> createSearchRequest(r));
@@ -91,13 +84,8 @@ public abstract class EntityRoute extends Route {
 
 		delete.putObject("document", doc);
 
-		eventBus.sendWithTimeout(
-				AsyncMongoPersistor.EVENT_DB_DELETE,
-				delete,
-				TIMEOUT,
-				(AsyncResult<Message<Integer>> results) -> respondDeleteResults(
+		mongoHelper.sendDelete(delete,  results -> respondDeleteResults(
 						results, request));
-
 	}
 
 	protected JsonObject createUpdateDocument(YokeRequest request){
@@ -126,12 +114,7 @@ public abstract class EntityRoute extends Route {
 
 		create.putObject("document", doc);
 
-		eventBus.sendWithTimeout(
-				AsyncMongoPersistor.EVENT_DB_CREATE,
-				create,
-				TIMEOUT,
-				(AsyncResult<Message<JsonObject>> results) -> respondCreateResults(
-						results, request));
+		mongoHelper.sendCreate(create, results -> respondCreateResults(results,request));
 
 	}
 
@@ -158,13 +141,8 @@ public abstract class EntityRoute extends Route {
 		find.putString("collection", collection);
 
 		find.putObject("document", doc);
-
-		eventBus.sendWithTimeout(
-				AsyncMongoPersistor.EVENT_DB_FIND,
-				find,
-				TIMEOUT,
-				(AsyncResult<Message<JsonArray>> results) -> respondFindResults(
-						results, request));
+		
+		mongoHelper.sendFind(find, results -> respondFindResults(results, request));
 	}
 
 	protected void respondDeleteResults(AsyncResult<Message<Integer>> results,
