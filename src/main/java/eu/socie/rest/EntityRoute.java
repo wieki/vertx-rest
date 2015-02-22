@@ -1,7 +1,5 @@
 package eu.socie.rest;
 
-import static eu.socie.mongo_async_persistor.util.MongoUtil.createIdReference;
-
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
@@ -94,8 +92,8 @@ public abstract class EntityRoute extends Route {
 		JsonObject updateDoc = request.body();
 		if (!updateDoc.containsField("_id")){
 			String id = request.getParameter(getIdParam());
-			//updateDoc.putString("_id", id);
-			updateDoc.putObject("_id", createIdReference(id));
+	
+			updateDoc.putString("_id", id);
 		}
 		
 		return updateDoc;

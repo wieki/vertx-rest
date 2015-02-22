@@ -78,6 +78,8 @@ public class Route {
 	public Route(String path, Vertx vertx) {
 		this.path = path;
 
+		this.vertx = vertx;
+		
 		mongoHelper = new MongoHelper(vertx);
 
 		versionPattern = Pattern.compile("v[0-9]+");

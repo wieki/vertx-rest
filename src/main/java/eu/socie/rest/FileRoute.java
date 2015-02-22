@@ -3,40 +3,60 @@ package eu.socie.rest;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 
+import com.jetdrone.vertx.yoke.core.YokeFileUpload;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
-
-import eu.socie.mongo_async_persistor.AsyncMongoPersistor;
-import eu.socie.mongo_async_persistor.util.MongoUtil;
+import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
 public class FileRoute extends Route {
 
-	EventBus eventBus;
-
 	public FileRoute(String path, Vertx vertx) {
-		super(path,vertx);
+		super(path, vertx);
 
-		this.eventBus = vertx.eventBus();
-
-		get((r) -> handleFile(r));
+		get(r -> handleFileGet(r));
+		post(r -> handleFilePost(r));
 	}
 
-	private void handleFile(YokeRequest request) {
+	private void handleFilePost(YokeRequest request) {
+	
+		if (request.files() != null) {
+			request.files().forEach((key,upload) -> processFile(request, key,upload));
+		}
+
+	}
+	
+	private void processFile(YokeRequest request, String key, YokeFileUpload upload) {
+		// TODO consider reading files in chunks, to enable large file support
+		vertx.fileSystem().readFile(upload.path(), result -> handleFileRead(request, upload, result));
+	}
+	
+	private void handleFileRead(YokeRequest request, YokeFileUpload upload, AsyncResult<Buffer> fileBuffer){
+		mongoHelper.sendStoreFile(upload.filename(), upload.contentType(), fileBuffer.result(), r -> printId(request, r));
+		
+		upload.delete();
+	}
+	
+	private void printId(YokeRequest request, AsyncResult<Message<String>> fileStoreResult){
+		YokeResponse response = request.response().setChunked(true);
+		
+		if (fileStoreResult.succeeded()) {
+			
+			response.write(fileStoreResult.result().body());
+		}
+		
+		response.end();
+	}
+
+	private void handleFileGet(YokeRequest request) {
 		String fileId = request.getParameter("fileId");
-		JsonObject id = MongoUtil.createIdReference(fileId);
-
 		JsonObject fileMsg = new JsonObject();
-		fileMsg.putObject("_id", id);
+		
+		fileMsg.putString("_id", fileId);
 
-		eventBus.sendWithTimeout(
-				AsyncMongoPersistor.EVENT_DB_GET_FILE,
-				fileMsg,
-				2000,
-				((AsyncResult<Message<Buffer>> fr) -> handleFileResponse(fr,
-						request)));
+		mongoHelper.sendGetFile(fileMsg,
+				fileRequest -> handleFileResponse(fileRequest, request));
 
 	}
 
