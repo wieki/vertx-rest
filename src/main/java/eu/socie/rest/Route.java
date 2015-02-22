@@ -8,7 +8,6 @@ import java.util.regex.Pattern;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxException;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.json.JsonElement;
 import org.vertx.java.core.json.JsonObject;
@@ -18,6 +17,7 @@ import com.jetdrone.vertx.yoke.middleware.Router;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
+import eu.socie.rest.exception.ProcessingException;
 import eu.socie.rest.mongo.MongoHelper;
 import eu.socie.rest.schema.JsonSchemaValidator;
 import eu.socie.rest.schema.ProcessReportEncoder;
@@ -67,6 +67,7 @@ public class Route {
 	public final static int ERROR_SERVER_SERVICE_UNAVAILABLE = 503;
 
 	public final static String ERROR_CLIENT_VERSION_MSG = "No version in accept header specified";
+	public final static String ERROR_CLIENT_EMPTY_DOC_MSG = "Cannot process an empty document";
 
 	private Pattern versionPattern;
 
@@ -76,7 +77,7 @@ public class Route {
 
 	public Route(String path, Vertx vertx) {
 		this.path = path;
-		
+
 		mongoHelper = new MongoHelper(vertx);
 
 		versionPattern = Pattern.compile("v[0-9]+");
@@ -88,13 +89,14 @@ public class Route {
 	 * Create an route bound to path and enable schema validation on incoming
 	 * objects. The jsonSchemaPath is based on a resource path
 	 * 
-	 * @param path is relative the path within the URL
+	 * @param path
+	 *            is relative the path within the URL
 	 * @param jsonSchemaPath
 	 */
 	public Route(String path, String jsonSchemaPath, Vertx vertx) {
 		this.path = path;
 		this.vertx = vertx;
-		
+
 		mongoHelper = new MongoHelper(vertx);
 
 		versionPattern = Pattern.compile("v[0-9]+");
@@ -257,6 +259,18 @@ public class Route {
 		request.response().setChunked(true).setStatusCode(code).end(error);
 	}
 
+	protected void replyError(YokeRequest request, int code,
+			ProcessingException exception) {
+
+		if (exception.hasJsonReport()) {
+			addJsonContentHeader(request);
+		}
+
+		String error = String.format("%s", exception.getMessage());
+		
+		request.response().setChunked(true).setStatusCode(code).end(error);
+	}
+
 	protected void replyError(YokeRequest request, int code, String message) {
 
 		String error = String.format("%s", message);
@@ -279,14 +293,16 @@ public class Route {
 			version = matcher.group(0);
 		} else {
 			request.response().setStatusCode(400).end(ERROR_CLIENT_VERSION_MSG);
-			throw new VertxException(ERROR_CLIENT_VERSION_MSG);
+			throw new ProcessingException(ERROR_CLIENT_VERSION_MSG);
 		}
 
 		return version;
 	}
 
-	
 	protected JsonObject validateDocument(JsonObject object) {
+		if (object == null) {
+			throw new ProcessingException(ERROR_CLIENT_EMPTY_DOC_MSG);
+		}
 		if (validator != null) {
 			// TODO include version checks and automatic handling
 			ProcessingReport report = validator.validate(object);
@@ -294,17 +310,17 @@ public class Route {
 				return object;
 			} else {
 				JsonObject obj = ProcessReportEncoder.encode(report);
-				
-				throw new VertxException(obj.toString());
+
+				throw new ProcessingException(obj);
 			}
-		} 
-	
+		}
+
 		return object;
 	}
-	
+
 	protected void respondJsonResults(YokeRequest request, JsonElement obj) {
 		addJsonContentHeader(request);
-		
+
 		request.response().setChunked(true).write(obj.toString())
 				.setStatusCode(SUCCESS_OK).end();
 	}

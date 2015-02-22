@@ -5,7 +5,6 @@ import java.util.Map.Entry;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxException;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.json.JsonArray;
@@ -14,6 +13,8 @@ import org.vertx.java.core.json.JsonObject;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
+import eu.socie.rest.exception.ProcessingException;
+import eu.socie.rest.util.CreateUtil;
 import eu.socie.rest.util.SearchUtil;
 
 public abstract class ListRoute extends Route {
@@ -81,26 +82,20 @@ public abstract class ListRoute extends Route {
 	}
 
 	protected final void createCreateRequest(YokeRequest request) {
-		JsonObject create = new JsonObject();
-
 		String version = getVersionFromHeader(request);
 
 		try {
 			JsonObject doc = validateAndConvertCreateDocument(version,
 					createCreateDocument(request));
 
-			create.putString("collection", collection);
-
-			create.putObject("document", doc);
+			JsonObject create = CreateUtil.createSearchDocument(doc, collection);
 
 			mongoHelper.sendCreate(create, results -> respondCreateResults(results, request));
 
-		} catch (VertxException ve) {
+		} catch (ProcessingException pe) {
 			replyError(request, ERROR_CLIENT_METHOD_UNACCEPTABLE,
-					ve.getMessage());
-			return;
+					pe);
 		}
-
 	}
 
 	/**
@@ -157,9 +152,7 @@ public abstract class ListRoute extends Route {
 			AsyncResult<Message<JsonObject>> results, YokeRequest request) {
 
 		if (results.succeeded()) {
-			JsonObject obj = results.result().body();
-
-			String id = obj.getString("result_id");
+			String id = CreateUtil.geIdFromResults(results);
 
 			YokeResponse response = request.response();
 
@@ -177,7 +170,7 @@ public abstract class ListRoute extends Route {
 	}
 
 	protected JsonArray convertFindResults(String version, JsonArray results)
-			throws VertxException {
+			throws ProcessingException {
 		return results;
 	}
 
@@ -194,9 +187,9 @@ public abstract class ListRoute extends Route {
 
 			try {
 				convertedResults = convertFindResults(version, results);
-			} catch (VertxException ve) {
+			} catch (ProcessingException pe) {
 				replyError(request, ERROR_CLIENT_METHOD_UNACCEPTABLE,
-						ve.getMessage());
+						pe);
 				return;
 			}
 

@@ -12,6 +12,8 @@ import org.vertx.java.core.json.JsonObject;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
+import eu.socie.rest.util.CreateUtil;
+
 public abstract class EntityRoute extends Route {
 
 	private String collection;
@@ -104,15 +106,11 @@ public abstract class EntityRoute extends Route {
 	}
 	
 	protected final void createUpdateRequest(YokeRequest request) {
-		JsonObject create = new JsonObject();
-		
 		String version = getVersionFromHeader(request);
 		
 		JsonObject doc = validateAndConvertDocument(version, createUpdateDocument(request));
-	
-		create.putString("collection", collection);
 
-		create.putObject("document", doc);
+		JsonObject create = CreateUtil.createSearchDocument(doc, collection);
 
 		mongoHelper.sendCreate(create, results -> respondCreateResults(results,request));
 
