@@ -88,7 +88,7 @@ public abstract class ListRoute extends Route {
 			JsonObject doc = validateAndConvertCreateDocument(version,
 					createCreateDocument(request));
 
-			JsonObject create = CreateUtil.createSearchDocument(doc, collection);
+			JsonObject create = CreateUtil.createCreateDocument(doc, collection);
 
 			mongoHelper.sendCreateOrUpdate(create, results -> respondCreateResults(results, request));
 

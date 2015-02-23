@@ -108,7 +108,7 @@ public abstract class EntityRoute extends Route {
 		
 		JsonObject doc = validateAndConvertDocument(version, createUpdateDocument(request));
 
-		JsonObject create = CreateUtil.createSearchDocument(doc, collection);
+		JsonObject create = CreateUtil.createCreateDocument(doc, collection);
 
 		mongoHelper.sendCreateOrUpdate(create, results -> respondCreateResults(results,request));
 

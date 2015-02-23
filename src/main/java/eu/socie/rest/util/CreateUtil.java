@@ -13,7 +13,7 @@ import org.vertx.java.core.json.JsonObject;
  */
 public class CreateUtil {
 
-	public static JsonObject createSearchDocument(JsonObject createObject, String collection) {
+	public static JsonObject createCreateDocument(JsonObject createObject, String collection) {
 		JsonObject create = new JsonObject();
 		
 		create.putString("collection", collection);
