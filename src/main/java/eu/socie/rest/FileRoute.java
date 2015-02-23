@@ -76,14 +76,17 @@ public class FileRoute extends Route {
 		String fileId = request.getParameter("fileId");
 		String download =	request.getParameter("download");
 		final boolean isDownload = checkDownload(download);
-				
+
+		doFileGet(request, fileId, isDownload);
+	}
+	
+	protected void doFileGet(YokeRequest request, String fileId, boolean isDownload){
 		JsonObject fileMsg = new JsonObject();
 
 		fileMsg.putString("_id", fileId);
 
 		mongoHelper.sendGetFile(fileMsg,
 				fileRequest -> handleFileResponse(fileRequest, request, isDownload));
-
 	}
 
 	private void handleFileResponse(AsyncResult<Message<Buffer>> fileResult,
