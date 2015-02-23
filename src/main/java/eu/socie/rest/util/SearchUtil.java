@@ -20,6 +20,18 @@ public class SearchUtil {
 	private static final int ASCENDING = 1;
 	private static final int DESCENDING = -1;
 	
+	
+	public static JsonObject createSearchDocument(JsonObject searchDoc, String collection) {
+		JsonObject find = new JsonObject();
+		
+		find.putString("collection", collection);
+
+		find.putObject("document", searchDoc);
+		
+		return find;
+	}
+	
+	
 	public static JsonObject createSearchDocument(JsonObject searchDoc, String collection, List<Map.Entry<String, String>> params){
 		Params convParams = convertParams(params);
 		
@@ -28,7 +40,7 @@ public class SearchUtil {
 	
 	
 	public static JsonObject createSearchDocument(JsonObject searchDoc, String collection, Params params){
-		JsonObject find = new JsonObject();
+		JsonObject find = createSearchDocument(searchDoc, collection);
 
 		for (Entry param : params.getEntries()) {
 			String key = param.getKey();
@@ -44,10 +56,6 @@ public class SearchUtil {
 			}
 
 		}
-
-		find.putString("collection", collection);
-
-		find.putObject("document", searchDoc);
 		
 		return find;
 	}

@@ -30,7 +30,7 @@ public class MongoHelper {
 		this.vertx = vertx;
 	}
 
-	public void sendCreate(JsonObject create,
+	public void sendCreateOrUpdate(JsonObject create,
 			Handler<AsyncResult<Message<JsonObject>>> handler) {
 		vertx.eventBus().sendWithTimeout(AsyncMongoPersistor.EVENT_DB_CREATE,
 				create, Route.TIMEOUT, handler);

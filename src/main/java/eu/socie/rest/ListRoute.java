@@ -90,7 +90,7 @@ public abstract class ListRoute extends Route {
 
 			JsonObject create = CreateUtil.createSearchDocument(doc, collection);
 
-			mongoHelper.sendCreate(create, results -> respondCreateResults(results, request));
+			mongoHelper.sendCreateOrUpdate(create, results -> respondCreateResults(results, request));
 
 		} catch (ProcessingException pe) {
 			replyError(request, ERROR_CLIENT_METHOD_UNACCEPTABLE,

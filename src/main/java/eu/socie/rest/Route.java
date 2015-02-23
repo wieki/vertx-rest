@@ -252,13 +252,13 @@ public class Route {
 
 	}
 
-	protected void replyError(YokeRequest request, int code,
+	protected void replyError(YokeRequest request, int statusCode,
 			ReplyException exception) {
 
 		String error = String.format("%d : %s", exception.failureCode(),
 				exception.getMessage());
 
-		request.response().setChunked(true).setStatusCode(code).end(error);
+		request.response().setChunked(true).setStatusCode(statusCode).end(error);
 	}
 
 	protected void replyError(YokeRequest request, int code,

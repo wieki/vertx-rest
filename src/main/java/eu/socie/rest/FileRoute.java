@@ -40,18 +40,21 @@ public class FileRoute extends Route {
 	private void handleFileRead(YokeRequest request, YokeFileUpload upload,
 			AsyncResult<Buffer> fileBuffer) {
 		mongoHelper.sendStoreFile(upload.filename(), upload.contentType(),
-				fileBuffer.result(), r -> printId(request, r));
+				fileBuffer.result(), r -> handleFileStoreResult(request, r));
 
 		upload.delete();
 	}
 
-	private void printId(YokeRequest request,
+	protected void handleFileStoreResult(YokeRequest request,
 			AsyncResult<Message<String>> fileStoreResult) {
 		YokeResponse response = request.response().setChunked(true);
 
 		if (fileStoreResult.succeeded()) {
-
-			response.write(fileStoreResult.result().body());
+			String id = fileStoreResult.result().body();
+			
+			response.headers().add("location", String.format("%s/%s", getBindPath(), id));
+			response.setStatusCode(Route.SUCCESS_CREATED)
+			.write(fileStoreResult.result().body());
 		}
 
 		response.end();
