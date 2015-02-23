@@ -10,47 +10,49 @@ import org.vertx.java.core.json.JsonObject;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
+import eu.socie.rest.exception.ProcessingException;
 import eu.socie.rest.util.CreateUtil;
 
 public abstract class EntityRoute extends Route {
 
 	private String collection;
-	
+
 	private String idParam = "id";
 
 	// TODO move to String
 	private static final String NOT_FOUND = "Entity with id %s was not found";
 
-	public EntityRoute(String collection, String path, String jsonSchema, Vertx vertx, String id){
+	public EntityRoute(String collection, String path, String jsonSchema,
+			Vertx vertx, String id) {
 		super(path, jsonSchema, vertx);
 
 		this.idParam = id;
-		
+
 		init(collection);
 	}
-	
-	public EntityRoute(String collection, String path, String jsonSchema, Vertx vertx) {
+
+	public EntityRoute(String collection, String path, String jsonSchema,
+			Vertx vertx) {
 		super(path, jsonSchema, vertx);
 
-	
 		init(collection);
 	}
-	
+
 	public EntityRoute(String collection, String path, Vertx vertx) {
 		super(path, vertx);
 
 		init(collection);
 	}
-	
+
 	public EntityRoute(String collection, String path, Vertx vertx, String id) {
 		super(path, vertx);
 
 		this.idParam = id;
-		
+
 		init(collection);
 	}
-	
-	private void init(String collection){
+
+	private void init(String collection) {
 		this.collection = collection;
 
 		get((r) -> createSearchRequest(r));
@@ -84,33 +86,43 @@ public abstract class EntityRoute extends Route {
 
 		delete.putObject("document", doc);
 
-		mongoHelper.sendDelete(delete,  results -> respondDeleteResults(
-						results, request));
+		mongoHelper.sendDelete(delete,
+				results -> respondDeleteResults(results, request));
 	}
 
-	protected JsonObject createUpdateDocument(YokeRequest request){
+	protected JsonObject createUpdateDocument(YokeRequest request) {
 		JsonObject updateDoc = request.body();
-		if (!updateDoc.containsField("_id")){
+		if (!updateDoc.containsField("_id")) {
 			String id = request.getParameter(getIdParam());
-	
+
 			updateDoc.putString("_id", id);
 		}
-		
+
 		return updateDoc;
 	}
-	
-	protected JsonObject validateAndConvertDocument(String version, JsonObject object){
+
+	protected JsonObject validateAndConvertDocument(String version,
+			JsonObject object) {
 		return validateDocument(object);
 	}
-	
+
 	protected final void createUpdateRequest(YokeRequest request) {
 		String version = getVersionFromHeader(request);
-		
-		JsonObject doc = validateAndConvertDocument(version, createUpdateDocument(request));
 
-		JsonObject create = CreateUtil.createCreateDocument(doc, collection);
+		try {
 
-		mongoHelper.sendCreateOrUpdate(create, results -> respondCreateResults(results,request));
+			JsonObject doc = validateAndConvertDocument(version,
+					createUpdateDocument(request));
+
+			JsonObject create = CreateUtil
+					.createCreateDocument(doc, collection);
+
+			mongoHelper.sendCreateOrUpdate(create,
+					results -> respondCreateResults(results, request));
+
+		} catch (ProcessingException pe) {
+			replyError(request, ERROR_CLIENT_METHOD_UNACCEPTABLE, pe);
+		}
 
 	}
 
@@ -137,8 +149,9 @@ public abstract class EntityRoute extends Route {
 		find.putString("collection", collection);
 
 		find.putObject("document", doc);
-		
-		mongoHelper.sendFind(find, results -> respondFindResults(results, request));
+
+		mongoHelper.sendFind(find,
+				results -> respondFindResults(results, request));
 	}
 
 	protected void respondDeleteResults(AsyncResult<Message<Integer>> results,
@@ -173,12 +186,12 @@ public abstract class EntityRoute extends Route {
 
 	}
 
-	protected JsonArray convertFindResults(String version, JsonArray results){
+	protected JsonArray convertFindResults(String version, JsonArray results) {
 		return results;
 	}
-	
-	protected final void respondFindResults(AsyncResult<Message<JsonArray>> result,
-			YokeRequest request) {
+
+	protected final void respondFindResults(
+			AsyncResult<Message<JsonArray>> result, YokeRequest request) {
 
 		if (result.succeeded()) {
 
@@ -189,11 +202,11 @@ public abstract class EntityRoute extends Route {
 				replyError(request, ERROR_CLIENT_NOT_FOUND,
 						String.format(NOT_FOUND, id));
 			}
-			
+
 			String version = getVersionFromHeader(request);
-			
+
 			JsonArray convertedResults = convertFindResults(version, results);
-			
+
 			respondJsonResults(request, convertedResults.get(0));
 
 		} else {
@@ -203,11 +216,13 @@ public abstract class EntityRoute extends Route {
 	}
 
 	/**
-	 * Return the parameter that is set to be the id of the object. If it's not changed it will return 'id'
+	 * Return the parameter that is set to be the id of the object. If it's not
+	 * changed it will return 'id'
+	 * 
 	 * @return the param
 	 */
-	public String getIdParam(){
+	public String getIdParam() {
 		return idParam;
 	}
-	
+
 }

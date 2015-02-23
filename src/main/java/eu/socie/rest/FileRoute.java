@@ -14,9 +14,19 @@ import eu.socie.mongo_async_persistor.util.MongoFileUtil;
 
 public class FileRoute extends Route {
 
+	public FileRoute(String path, String schema, Vertx vertx) {
+		super(path, schema, vertx);
+		
+		init();
+	}
+	
 	public FileRoute(String path, Vertx vertx) {
 		super(path, vertx);
+		
+		init();
+	}
 
+	private void init() {
 		get(r -> handleFileGet(r));
 		post(r -> handleFilePost(r));
 	}
