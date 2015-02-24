@@ -82,7 +82,7 @@ public abstract class EntityRoute extends Route {
 		mongoHelper.sendUpdate(update, r -> handlePatchResult(request, r, id));
 	}
 
-	private void handlePatchResult(YokeRequest request,
+	protected void handlePatchResult(YokeRequest request,
 			AsyncResult<Message<JsonObject>> result, String id) {
 		if (result.succeeded()) {
 			JsonObject doc = result.result().body();
