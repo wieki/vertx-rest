@@ -43,6 +43,11 @@ public class MongoHelper {
 				delete, Route.TIMEOUT, handler);
 
 	}
+	
+	public void sendUpdate(JsonObject update, Handler<AsyncResult<Message<Integer>>> handler) {
+		vertx.eventBus().sendWithTimeout(AsyncMongoPersistor.EVENT_DB_UPDATE,
+				update, Route.TIMEOUT, handler);
+	}
 
 	public void sendFind(JsonObject find,
 			Handler<AsyncResult<Message<JsonArray>>> handler) {

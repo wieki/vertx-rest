@@ -61,9 +61,42 @@ public abstract class EntityRoute extends Route {
 		patch((r) -> createPatchRequest(r));
 	}
 
-	private Object createPatchRequest(YokeRequest r) {
-		// TODO Auto-generated method stub
-		return null;
+	protected JsonObject validateAndConvertPatchDocument(JsonObject obj){
+		return obj;
+	}
+	
+	private final void createPatchRequest(YokeRequest request) {
+		JsonObject d = request.body();
+		
+		JsonObject doc = validateAndConvertPatchDocument(d);
+		
+		String idParam = getIdParam();
+		String id = request.getParameter(idParam);
+
+		JsonObject query = new JsonObject();
+		query.putString("_id", id);
+
+		JsonObject update = CreateUtil.createUpdateDocument(doc, query,
+				collection);
+
+		mongoHelper.sendUpdate(update, r -> handlePatchResult(request, r));
+	}
+
+	private void handlePatchResult(YokeRequest request,
+			AsyncResult<Message<Integer>> result) {
+		if (result.succeeded()) {
+			convertPatchResult();
+			request.response().setStatusCode(Route.SUCCESS_OK).end();
+		} else {
+			String msg = result.cause().getMessage();
+			// TODO update message to something more useful
+			replyError(request, Route.ERROR_SERVER_GENERAL_ERROR, msg);
+		}
+
+	}
+	
+	protected void convertPatchResult(){
+		
 	}
 
 	protected JsonObject createDeleteDocument(YokeRequest request) {
