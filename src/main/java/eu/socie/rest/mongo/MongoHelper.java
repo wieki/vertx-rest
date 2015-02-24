@@ -44,7 +44,7 @@ public class MongoHelper {
 
 	}
 	
-	public void sendUpdate(JsonObject update, Handler<AsyncResult<Message<Integer>>> handler) {
+	public void sendUpdate(JsonObject update, Handler<AsyncResult<Message<JsonObject>>> handler) {
 		vertx.eventBus().sendWithTimeout(AsyncMongoPersistor.EVENT_DB_UPDATE,
 				update, Route.TIMEOUT, handler);
 	}

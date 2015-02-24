@@ -79,13 +79,16 @@ public abstract class EntityRoute extends Route {
 		JsonObject update = CreateUtil.createUpdateDocument(doc, query,
 				collection);
 
-		mongoHelper.sendUpdate(update, r -> handlePatchResult(request, r));
+		mongoHelper.sendUpdate(update, r -> handlePatchResult(request, r, id));
 	}
 
 	private void handlePatchResult(YokeRequest request,
-			AsyncResult<Message<Integer>> result) {
+			AsyncResult<Message<JsonObject>> result, String id) {
 		if (result.succeeded()) {
-			convertPatchResult();
+			JsonObject doc = result.result().body();
+			doc.putString("result_id", id);
+			
+			convertPatchResult(doc);
 			request.response().setStatusCode(Route.SUCCESS_OK).end();
 		} else {
 			String msg = result.cause().getMessage();
@@ -95,8 +98,8 @@ public abstract class EntityRoute extends Route {
 
 	}
 	
-	protected void convertPatchResult(){
-		
+	protected JsonObject convertPatchResult(JsonObject doc){
+		return doc;
 	}
 
 	protected JsonObject createDeleteDocument(YokeRequest request) {
