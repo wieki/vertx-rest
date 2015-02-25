@@ -1,6 +1,7 @@
 package eu.socie.rest;
 
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
@@ -88,6 +89,14 @@ public class FileRoute extends Route {
 		final boolean isDownload = checkDownload(download);
 
 		doFileGet(request, fileId, isDownload);
+	}
+	
+	protected void doFileCheck(String fileId, Handler<AsyncResult<Message<JsonObject>>> handler){
+		JsonObject fileMsg = new JsonObject();
+
+		fileMsg.putString("_id", fileId);
+
+		mongoHelper.sendCheckFile(fileMsg, handler);
 	}
 	
 	protected void doFileGet(YokeRequest request, String fileId, boolean isDownload){
