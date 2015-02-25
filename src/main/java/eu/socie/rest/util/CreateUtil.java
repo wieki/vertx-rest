@@ -29,5 +29,18 @@ public class CreateUtil {
 		
 		return id;
 	}
+	
+	public static JsonObject createUpdateDocument(JsonObject updateObject, JsonObject findQuery, String collection) {
+		JsonObject create = new JsonObject();
+		
+		create.putString("collection", collection);
+
+		create.putObject("document", updateObject);
+		
+		create.putObject("query", findQuery);
+
+		return create;
+		
+	}
 
 }
