@@ -1,5 +1,7 @@
 package eu.socie.rest;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -27,7 +29,7 @@ import eu.socie.rest.schema.ProcessReportEncoder;
  * @author Bram Wiekens
  *
  */
-public class Route {
+public class Route implements ServerReadyListener {
 
 	private String bindPath;
 
@@ -74,12 +76,13 @@ public class Route {
 	protected JsonSchemaValidator validator;
 	protected MongoHelper mongoHelper;
 	protected Vertx vertx;
+	private String jsonSchemaPath;
 
 	public Route(String path, Vertx vertx) {
 		this.path = path;
 
 		this.vertx = vertx;
-		
+
 		mongoHelper = new MongoHelper(vertx);
 
 		versionPattern = Pattern.compile("v[0-9]+");
@@ -102,10 +105,6 @@ public class Route {
 		mongoHelper = new MongoHelper(vertx);
 
 		versionPattern = Pattern.compile("v[0-9]+");
-
-		validator = new JsonSchemaValidator(jsonSchemaPath);
-		// TODO this is async, can be a problem?
-		validator.load(vertx);
 	}
 
 	public String getPath() {
@@ -258,7 +257,8 @@ public class Route {
 		String error = String.format("%d : %s", exception.failureCode(),
 				exception.getMessage());
 
-		request.response().setChunked(true).setStatusCode(statusCode).end(error);
+		request.response().setChunked(true).setStatusCode(statusCode)
+				.end(error);
 	}
 
 	protected void replyError(YokeRequest request, int code,
@@ -269,7 +269,7 @@ public class Route {
 		}
 
 		String error = String.format("%s", exception.getMessage());
-		
+
 		request.response().setChunked(true).setStatusCode(code).end(error);
 	}
 
@@ -326,4 +326,21 @@ public class Route {
 		request.response().setChunked(true).write(obj.toString())
 				.setStatusCode(SUCCESS_OK).end();
 	}
+
+	@Override
+	public void finishedLoading() {
+		if (jsonSchemaPath != null) {
+
+			try {
+				validator = new JsonSchemaValidator(new URI(jsonSchemaPath));
+			} catch (URISyntaxException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			// TODO this is async, can be a problem?
+			validator.load(vertx);
+		}
+	}
+
 }
