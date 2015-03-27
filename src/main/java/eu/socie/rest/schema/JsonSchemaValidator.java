@@ -39,7 +39,7 @@ public class JsonSchemaValidator {
 	private static final String ERROR_DOCUMENT_VALIDATION = "Problem validating document due to: %s";
 	private static final String ERROR_SCHEMA_READ = "Problem reading %s due to: %s";
 	private static final String ERROR_READ = "Could not read %s";
-	private static final String ERROR_URI = "Server returned %d with the following message %s";
+	private static final String ERROR_URI = "Server returned \"%d - %s\" for resource %s";
 
 /*	public JsonSchemaValidator(String resourcePath) {
 		this.resourcePath = resourcePath;
@@ -67,9 +67,13 @@ public class JsonSchemaValidator {
 		if (resourceUrl != null) {
 			
 			HttpClient client = vertx.createHttpClient();
-			String url = resourceUrl.toString();
+			client.setHost(resourceUrl.getHost());
+			client.setPort(resourceUrl.getPort());
+			
+			String url = resourceUrl.getPath();  
 
-			HttpClientRequest request = client.get(url, r -> handleSchemaResponse(r));
+			HttpClientRequest request = client.get(url, r -> handleSchemaResponse(r, url));
+			request.headers().add("Accept", "application/json");
 			request.end();
 		
 		}// Read resource from file
@@ -86,11 +90,11 @@ public class JsonSchemaValidator {
 		
 	}
 	
-	private void handleSchemaResponse(HttpClientResponse response) {
+	private void handleSchemaResponse(HttpClientResponse response, String url) {
 		if (response.statusCode() == Route.SUCCESS_OK) {
 			response.bodyHandler(b -> handleSchema(b));
 		} else {
-			throw new VertxException(String.format(ERROR_URI, response.statusCode(), response.statusMessage()));
+			throw new VertxException(String.format(ERROR_URI, response.statusCode(), response.statusMessage(), url));
 		}
 	}
 	

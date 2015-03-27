@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.annotation.Nullable;
+
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.Vertx;
@@ -103,6 +105,8 @@ public class Route implements ServerReadyListener {
 		this.vertx = vertx;
 
 		mongoHelper = new MongoHelper(vertx);
+		
+		this.jsonSchemaPath = jsonSchemaPath;
 
 		versionPattern = Pattern.compile("v[0-9]+");
 	}
@@ -328,18 +332,24 @@ public class Route implements ServerReadyListener {
 	}
 
 	@Override
-	public void finishedLoading() {
+	public void finishedLoading(@Nullable String hostname, @Nullable Integer port) {
+		String localhost = hostname == null ? "localhost" : hostname;
+		int localport = port == null ? 80 : port;
+		String path = jsonSchemaPath.startsWith("/") ? jsonSchemaPath : "/" + jsonSchemaPath; 
+		// FIXME do somehting about https!!
+		
 		if (jsonSchemaPath != null) {
-
 			try {
-				validator = new JsonSchemaValidator(new URI(jsonSchemaPath));
+				URI uri = new URI(String.format("http://%s:%d%s", localhost, localport, path));
+				
+				validator = new JsonSchemaValidator(uri);
+				// TODO this is async, can be a problem?
+				validator.load(vertx);
 			} catch (URISyntaxException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
-			// TODO this is async, can be a problem?
-			validator.load(vertx);
 		}
 	}
 

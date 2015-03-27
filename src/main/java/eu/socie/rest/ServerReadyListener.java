@@ -1,5 +1,7 @@
 package eu.socie.rest;
 
+import javax.annotation.Nullable;
+
 
 /**
  * 
@@ -7,5 +9,5 @@ package eu.socie.rest;
  *
  */
 public interface ServerReadyListener {
-	void finishedLoading();
+	void finishedLoading(@Nullable String hostname, @Nullable Integer port);
 }
