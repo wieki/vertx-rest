@@ -91,6 +91,7 @@ public class JsonSchemaValidator {
 	}
 	
 	private void handleSchemaResponse(HttpClientResponse response, String url) {
+
 		if (response.statusCode() == Route.SUCCESS_OK) {
 			response.bodyHandler(b -> handleSchema(b));
 		} else {
