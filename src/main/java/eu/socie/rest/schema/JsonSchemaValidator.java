@@ -6,6 +6,7 @@ package eu.socie.rest.schema;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.util.regex.Pattern;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Vertx;
@@ -82,8 +83,9 @@ public class JsonSchemaValidator {
 		
 			if (url != null) {
 				String filePath = url.getPath();
-
+			if (Pattern.matches("^/[A-Z]:.*$", filePath)) {
 				vertx.fileSystem().readFile(filePath, b -> handleSchema(b));
+			}
 			}
 			
 		}

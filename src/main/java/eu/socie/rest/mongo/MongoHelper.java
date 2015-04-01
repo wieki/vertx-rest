@@ -56,6 +56,14 @@ public class MongoHelper {
 				find, Route.TIMEOUT, handler);
 	}
 	
+	public void sendCheckFile(JsonObject fileMsg, Handler<AsyncResult<Message<JsonObject>>> handler) {
+		vertx.eventBus().sendWithTimeout(
+				AsyncMongoPersistor.EVENT_DB_CHECK_FILE,
+				fileMsg,
+				Route.TIMEOUT,
+				handler);
+	}
+	
 	public void sendGetFile(JsonObject fileMsg, Handler<AsyncResult<Message<Buffer>>> handler) {
 		vertx.eventBus().sendWithTimeout(
 				AsyncMongoPersistor.EVENT_DB_GET_FILE,

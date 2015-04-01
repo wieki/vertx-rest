@@ -1,6 +1,7 @@
 package eu.socie.rest;
 
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
@@ -90,6 +91,14 @@ public class FileRoute extends Route {
 		doFileGet(request, fileId, isDownload);
 	}
 	
+	protected void doFileCheck(String fileId, Handler<AsyncResult<Message<JsonObject>>> handler){
+		JsonObject fileMsg = new JsonObject();
+
+		fileMsg.putString("_id", fileId);
+
+		mongoHelper.sendCheckFile(fileMsg, handler);
+	}
+	
 	protected void doFileGet(YokeRequest request, String fileId, boolean isDownload){
 		JsonObject fileMsg = new JsonObject();
 
@@ -99,7 +108,7 @@ public class FileRoute extends Route {
 				fileRequest -> handleFileResponse(fileRequest, request, isDownload));
 	}
 
-	private void handleFileResponse(AsyncResult<Message<Buffer>> fileResult,
+	protected void handleFileResponse(AsyncResult<Message<Buffer>> fileResult,
 			YokeRequest request, boolean isDownload) {
 		if (fileResult.succeeded()) {
 			String disposition = isDownload ? "attachtment" : "inline";
