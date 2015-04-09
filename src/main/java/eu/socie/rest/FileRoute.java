@@ -111,7 +111,7 @@ public class FileRoute extends Route {
 	protected void handleFileResponse(AsyncResult<Message<Buffer>> fileResult,
 			YokeRequest request, boolean isDownload) {
 		if (fileResult.succeeded()) {
-			String disposition = isDownload ? "attachtment" : "inline";
+			String disposition = isDownload ? "attachment" : "inline";
 			YokeResponse response = request.response().setChunked(true);
 
 			Message<Buffer> msg = fileResult.result();
