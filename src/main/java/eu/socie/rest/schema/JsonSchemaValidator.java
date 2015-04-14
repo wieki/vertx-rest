@@ -6,7 +6,6 @@ package eu.socie.rest.schema;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
-import java.util.regex.Pattern;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Vertx;
@@ -126,7 +125,6 @@ public class JsonSchemaValidator {
 			} catch (IOException | ProcessingException e) {
 				throw new VertxException(String.format(ERROR_SCHEMA_READ, resourcePath, e.getMessage()));
 			}
-
 		} else {
 			throw new VertxException(String.format(ERROR_READ, resourcePath));
 		}
