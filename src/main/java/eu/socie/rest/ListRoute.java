@@ -119,7 +119,7 @@ public abstract class ListRoute extends Route {
 	 * @param request
 	 */
 	protected final void createSearchRequest(YokeRequest request) {
-	
+		// FIXME this makes no sense, get requests don't have a json body!
 		JsonObject doc = createSearchDocument(request);
 		
 		List<Entry<String, String>> params = request.params().entries();

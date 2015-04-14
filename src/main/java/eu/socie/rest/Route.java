@@ -1,9 +1,13 @@
 package eu.socie.rest;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.annotation.Nullable;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
@@ -27,7 +31,7 @@ import eu.socie.rest.schema.ProcessReportEncoder;
  * @author Bram Wiekens
  *
  */
-public class Route {
+public class Route implements ServerReadyListener {
 
 	private String bindPath;
 
@@ -74,12 +78,13 @@ public class Route {
 	protected JsonSchemaValidator validator;
 	protected MongoHelper mongoHelper;
 	protected Vertx vertx;
+	private String jsonSchemaPath;
 
 	public Route(String path, Vertx vertx) {
 		this.path = path;
 
 		this.vertx = vertx;
-		
+
 		mongoHelper = new MongoHelper(vertx);
 
 		versionPattern = Pattern.compile("v[0-9]+");
@@ -100,12 +105,10 @@ public class Route {
 		this.vertx = vertx;
 
 		mongoHelper = new MongoHelper(vertx);
+		
+		this.jsonSchemaPath = jsonSchemaPath;
 
 		versionPattern = Pattern.compile("v[0-9]+");
-
-		validator = new JsonSchemaValidator(jsonSchemaPath);
-		// TODO this is async, can be a problem?
-		validator.load(vertx);
 	}
 
 	public String getPath() {
@@ -258,7 +261,8 @@ public class Route {
 		String error = String.format("%d : %s", exception.failureCode(),
 				exception.getMessage());
 
-		request.response().setChunked(true).setStatusCode(statusCode).end(error);
+		request.response().setChunked(true).setStatusCode(statusCode)
+				.end(error);
 	}
 
 	protected void replyError(YokeRequest request, int code,
@@ -269,7 +273,7 @@ public class Route {
 		}
 
 		String error = String.format("%s", exception.getMessage());
-		
+
 		request.response().setChunked(true).setStatusCode(code).end(error);
 	}
 
@@ -326,4 +330,27 @@ public class Route {
 		request.response().setChunked(true).write(obj.toString())
 				.setStatusCode(SUCCESS_OK).end();
 	}
+
+	@Override
+	public void finishedLoading(@Nullable String hostname, @Nullable Integer port) {
+		String localhost = hostname == null ? "localhost" : hostname;
+		int localport = port == null ? 80 : port;
+		String path = jsonSchemaPath.startsWith("/") ? jsonSchemaPath : "/" + jsonSchemaPath; 
+		// FIXME do somehting about https!!
+		
+		if (jsonSchemaPath != null) {
+			try {
+				URI uri = new URI(String.format("http://%s:%d%s", localhost, localport, path));
+				
+				validator = new JsonSchemaValidator(uri);
+				// TODO this is async, can be a problem?
+				validator.load(vertx);
+			} catch (URISyntaxException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
+	}
+
 }

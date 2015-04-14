@@ -6,6 +6,7 @@ package eu.socie.rest.schema;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.util.regex.Pattern;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Vertx;
@@ -93,6 +94,14 @@ public class JsonSchemaValidator {
 	
 	private void handleSchemaResponse(HttpClientResponse response, String url) {
 
+<<<<<<< HEAD
+		if (url != null) {
+			String filePath = url.getPath().substring(1);
+			if (Pattern.matches("^/[A-Z]:.*$", filePath)) {
+				filePath = filePath.substring(1);
+			}
+			vertx.fileSystem().readFile(filePath, (b) -> handleSchema(b));
+=======
 		if (response.statusCode() == Route.SUCCESS_OK) {
 			response.bodyHandler(b -> handleSchema(b));
 		} else {
@@ -110,6 +119,7 @@ public class JsonSchemaValidator {
 		
 		}  catch (IOException | ProcessingException e) {
 			throw new VertxException(String.format(ERROR_SCHEMA_READ, resourceUrl.toString(), e.getMessage()));
+>>>>>>> wieki/master
 		}
 		
 	}
@@ -125,6 +135,7 @@ public class JsonSchemaValidator {
 			} catch (IOException | ProcessingException e) {
 				throw new VertxException(String.format(ERROR_SCHEMA_READ, resourcePath, e.getMessage()));
 			}
+
 		} else {
 			throw new VertxException(String.format(ERROR_READ, resourcePath));
 		}
