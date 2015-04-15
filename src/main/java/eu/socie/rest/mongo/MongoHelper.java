@@ -68,7 +68,7 @@ public class MongoHelper {
 		vertx.eventBus().sendWithTimeout(
 				AsyncMongoPersistor.EVENT_DB_GET_FILE,
 				fileMsg,
-				Route.TIMEOUT,
+				3 * Route.TIMEOUT,
 				handler);
 	}
 	
