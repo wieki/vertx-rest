@@ -1,5 +1,7 @@
 package eu.socie.rest;
 
+import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -25,18 +27,19 @@ public abstract class ListRoute extends Route {
 	public static final String ERROR_ENTITY_EMPTY = "The submitted entity is empty and cannot be stored";
 	public static final String ERROR_DELETE_DOC_EMPTY = "The delete search document is empty, therefore cannot be executed";
 
-	public ListRoute(String collection, String path, String jsonSchema, Vertx vertx){
+	public ListRoute(String collection, String path, String jsonSchema,
+			Vertx vertx) {
 		super(path, jsonSchema, vertx);
-		
+
 		init(collection);
 	}
-	
+
 	public ListRoute(String collection, String path, Vertx vertx) {
 		super(path, vertx);
 
 		init(collection);
 	}
-	
+
 	private void init(String collection) {
 
 		this.collection = collection;
@@ -64,11 +67,13 @@ public abstract class ListRoute extends Route {
 
 		delete.putObject("document", doc);
 
-		mongoHelper.sendDelete(delete, results -> respondDeleteResults(results, request));
+		mongoHelper.sendDelete(delete,
+				results -> respondDeleteResults(results, request));
 
 	}
 
-	protected JsonObject validateAndConvertCreateDocument(String version, JsonObject object) {
+	protected JsonObject validateAndConvertCreateDocument(String version,
+			JsonObject object) {
 		// TODO API version differentiation
 		return validateDocument(object);
 	}
@@ -88,13 +93,14 @@ public abstract class ListRoute extends Route {
 			JsonObject doc = validateAndConvertCreateDocument(version,
 					createCreateDocument(request));
 
-			JsonObject create = CreateUtil.createCreateDocument(doc, collection);
+			JsonObject create = CreateUtil
+					.createCreateDocument(doc, collection);
 
-			mongoHelper.sendCreateOrUpdate(create, results -> respondCreateResults(results, request));
+			mongoHelper.sendCreateOrUpdate(create,
+					results -> respondCreateResults(results, request));
 
 		} catch (ProcessingException pe) {
-			replyError(request, ERROR_CLIENT_METHOD_UNACCEPTABLE,
-					pe);
+			replyError(request, ERROR_CLIENT_METHOD_UNACCEPTABLE, pe);
 		}
 	}
 
@@ -102,7 +108,7 @@ public abstract class ListRoute extends Route {
 	 * Create a search document from the request. If modifications to the
 	 * document are necessary before submitting the query override this method.
 	 * The method now only creates an empty search document (which will return
-	 * all doucments)
+	 * all document)
 	 * 
 	 * @param request
 	 *            is the http request
@@ -121,13 +127,32 @@ public abstract class ListRoute extends Route {
 	protected final void createSearchRequest(YokeRequest request) {
 		// FIXME this makes no sense, get requests don't have a json body!
 		JsonObject doc = createSearchDocument(request);
-		
-		List<Entry<String, String>> params = request.params().entries();
-		
-		JsonObject find = SearchUtil.createSearchDocument(doc, collection,params);
 
-		mongoHelper.sendFind(find, results -> respondFindResults(results, request));
+		List<Entry<String, String>> params = request.params().entries();
+
+		String queryValue = request.getParameter("q");
 		
+		if (queryValue != null && !queryValue.isEmpty()) {
+			try {
+				String value = URLDecoder.decode(queryValue, "UTF-8");
+			
+				JsonObject obj = new JsonObject(value);
+				
+				doc.mergeIn(obj);
+			
+				
+			} catch (Exception e) {
+				System.out.println(e.getMessage());
+				// Query string is invalid, just ignore it;
+			}
+		}
+		
+		JsonObject find = SearchUtil.createSearchDocument(doc, collection,
+				params);
+
+		mongoHelper.sendFind(find,
+				results -> respondFindResults(results, request));
+
 	}
 
 	protected JsonObject createSortDoc(String sortStr) {
@@ -188,8 +213,7 @@ public abstract class ListRoute extends Route {
 			try {
 				convertedResults = convertFindResults(version, results);
 			} catch (ProcessingException pe) {
-				replyError(request, ERROR_CLIENT_METHOD_UNACCEPTABLE,
-						pe);
+				replyError(request, ERROR_CLIENT_METHOD_UNACCEPTABLE, pe);
 				return;
 			}
 
@@ -200,5 +224,6 @@ public abstract class ListRoute extends Route {
 			replyError(request, ERROR_SERVER_GENERAL_ERROR, ex);
 		}
 	}
+
 
 }

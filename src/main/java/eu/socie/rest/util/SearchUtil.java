@@ -53,8 +53,8 @@ public class SearchUtil {
 
 			} else if (key.equalsIgnoreCase(SORT)) {
 				JsonObject sortObj = createSortDoc(param.getValue());
-				searchDoc.putObject(SORT, sortObj);
-			}
+				find.putObject(SORT, sortObj);
+			} 
 		}
 
 		return find;
