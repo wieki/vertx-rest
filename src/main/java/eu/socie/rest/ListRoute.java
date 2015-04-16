@@ -1,7 +1,6 @@
 package eu.socie.rest;
 
 import java.net.URLDecoder;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 

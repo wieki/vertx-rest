@@ -15,6 +15,8 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.json.JsonElement;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.jetdrone.vertx.yoke.middleware.Router;
@@ -79,6 +81,7 @@ public class Route implements ServerReadyListener {
 	protected MongoHelper mongoHelper;
 	protected Vertx vertx;
 	private String jsonSchemaPath;
+	protected Logger logger;
 
 	public Route(String path, Vertx vertx) {
 		this.path = path;
@@ -90,6 +93,9 @@ public class Route implements ServerReadyListener {
 		versionPattern = Pattern.compile("v[0-9]+");
 
 		validator = null;
+		//FIXME consider obtaining the logger differently?
+		String loggerName = this.getClass().getName() + "-" + path + "-" + System.identityHashCode(this);
+	    logger = LoggerFactory.getLogger(loggerName);
 	}
 
 	/**
