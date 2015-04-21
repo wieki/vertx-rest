@@ -84,18 +84,15 @@ public class Route implements ServerReadyListener {
 	protected Logger logger;
 
 	public Route(String path, Vertx vertx) {
+		this();
+		
 		this.path = path;
 
 		this.vertx = vertx;
 
 		mongoHelper = new MongoHelper(vertx);
 
-		versionPattern = Pattern.compile("v[0-9]+");
-
 		validator = null;
-		//FIXME consider obtaining the logger differently?
-		String loggerName = this.getClass().getName() + "-" + path + "-" + System.identityHashCode(this);
-	    logger = LoggerFactory.getLogger(loggerName);
 	}
 
 	/**
@@ -107,14 +104,24 @@ public class Route implements ServerReadyListener {
 	 * @param jsonSchemaPath
 	 */
 	public Route(String path, String jsonSchemaPath, Vertx vertx) {
+		this();
+		
 		this.path = path;
 		this.vertx = vertx;
 
 		mongoHelper = new MongoHelper(vertx);
-		
+
 		this.jsonSchemaPath = jsonSchemaPath;
 
+	}
+
+	private Route() {
 		versionPattern = Pattern.compile("v[0-9]+");
+
+		// FIXME consider obtaining the logger differently?
+		String loggerName = this.getClass().getName() + "-" + path + "-"
+				+ System.identityHashCode(this);
+		logger = LoggerFactory.getLogger(loggerName);
 	}
 
 	public String getPath() {
@@ -338,16 +345,19 @@ public class Route implements ServerReadyListener {
 	}
 
 	@Override
-	public void finishedLoading(@Nullable String hostname, @Nullable Integer port) {
+	public void finishedLoading(@Nullable String hostname,
+			@Nullable Integer port) {
 		String localhost = hostname == null ? "localhost" : hostname;
 		int localport = port == null ? 80 : port;
-		String path = jsonSchemaPath.startsWith("/") ? jsonSchemaPath : "/" + jsonSchemaPath; 
+		String path = jsonSchemaPath.startsWith("/") ? jsonSchemaPath : "/"
+				+ jsonSchemaPath;
 		// FIXME do somehting about https!!
-		
+
 		if (jsonSchemaPath != null) {
 			try {
-				URI uri = new URI(String.format("http://%s:%d%s", localhost, localport, path));
-				
+				URI uri = new URI(String.format("http://%s:%d%s", localhost,
+						localport, path));
+
 				validator = new JsonSchemaValidator(uri);
 				// TODO this is async, can be a problem?
 				validator.load(vertx);
