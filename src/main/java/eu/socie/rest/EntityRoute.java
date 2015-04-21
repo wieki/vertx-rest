@@ -12,6 +12,7 @@ import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
 import eu.socie.rest.exception.ProcessingException;
 import eu.socie.rest.util.CreateUtil;
+import eu.socie.rest.util.DeleteUtil;
 
 public abstract class EntityRoute extends Route {
 
@@ -103,24 +104,18 @@ public abstract class EntityRoute extends Route {
 	}
 
 	protected JsonObject createDeleteDocument(YokeRequest request) {
-		JsonObject doc = new JsonObject();
+		JsonObject queryDoc = new JsonObject();
 
 		String id = request.getParameter(idParam);
 
-		doc.putString("_id", id);
+		queryDoc.putString("_id", id);
 
-		return doc;
+		return DeleteUtil.createDeleteDocument(queryDoc, collection, true);
+
 	}
 
 	protected final void createDeleteRequest(YokeRequest request) {
-		JsonObject delete = new JsonObject();
-
-		JsonObject doc = createDeleteDocument(request);
-
-		delete.putBoolean("just_one", true);
-		delete.putString("collection", collection);
-
-		delete.putObject("document", doc);
+		JsonObject delete = createDeleteDocument(request);
 
 		mongoHelper.sendDelete(delete,
 				results -> respondDeleteResults(results, request));

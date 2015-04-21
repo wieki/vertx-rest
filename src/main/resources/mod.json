@@ -9,5 +9,5 @@
 
   "auto-redeploy": true,
   
-  "includes": "com.jetdrone~yoke~2.0.12,eu.socie~mongo-async-persistor~0.2-SNAPSHOT"
+  "includes": "com.jetdrone~yoke~2.0.13,eu.socie~mongo-async-persistor~0.3-SNAPSHOT"
 }
