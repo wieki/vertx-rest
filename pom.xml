@@ -52,7 +52,7 @@
 		<maven.dependency.plugin.version>2.7</maven.dependency.plugin.version>
 
 		<yoke.version>2.0.13</yoke.version>
-		<mongo.async.persistor.version>0.3-SNAPSHOT</mongo.async.persistor.version>
+		<mongo.async.persistor.version>0.3</mongo.async.persistor.version>
 		<json.validator.version>2.2.6</json.validator.version>
 		<nimbus.jwt.version>3.9.2</nimbus.jwt.version>
 	</properties>

@@ -15,7 +15,7 @@ public class DeleteUtil {
 	public static JsonObject createDeleteDocument(JsonObject deleteQuery, String collection, boolean justOne) {
 		JsonObject delete = new JsonObject();
 		
-		delete.putBoolean("just_one", true);
+		delete.putBoolean("just_one", justOne);
 		delete.putString("collection", collection);
 	
 		delete.putObject("query", deleteQuery);

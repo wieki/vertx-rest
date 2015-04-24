@@ -23,7 +23,7 @@ public class CreateUtil {
 		return create;
 	}
 	
-	public static String geIdFromResults(AsyncResult<Message<JsonObject>> results){
+	public static String getIdFromResults(AsyncResult<Message<JsonObject>> results){
 		JsonObject obj = results.result().body();
 		String id = obj.getString("result_id");
 		

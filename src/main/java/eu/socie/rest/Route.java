@@ -74,6 +74,8 @@ public class Route implements ServerReadyListener {
 
 	public final static String ERROR_CLIENT_VERSION_MSG = "No version in accept header specified";
 	public final static String ERROR_CLIENT_EMPTY_DOC_MSG = "Cannot process an empty document";
+	
+	private final static String VERSION_PATTERN = "v[0-9]+";
 
 	private Pattern versionPattern;
 
@@ -84,11 +86,7 @@ public class Route implements ServerReadyListener {
 	protected Logger logger;
 
 	public Route(String path, Vertx vertx) {
-		this();
-		
-		this.path = path;
-
-		this.vertx = vertx;
+		this(path, vertx, VERSION_PATTERN);
 
 		mongoHelper = new MongoHelper(vertx);
 
@@ -104,10 +102,7 @@ public class Route implements ServerReadyListener {
 	 * @param jsonSchemaPath
 	 */
 	public Route(String path, String jsonSchemaPath, Vertx vertx) {
-		this();
-		
-		this.path = path;
-		this.vertx = vertx;
+		this(path, vertx, VERSION_PATTERN);
 
 		mongoHelper = new MongoHelper(vertx);
 
@@ -115,8 +110,11 @@ public class Route implements ServerReadyListener {
 
 	}
 
-	private Route() {
-		versionPattern = Pattern.compile("v[0-9]+");
+	private Route(String path, Vertx vertx, String pattern) {
+		this.path = path;
+
+		this.vertx = vertx;
+		versionPattern = Pattern.compile(pattern);
 
 		// FIXME consider obtaining the logger differently?
 		String loggerName = this.getClass().getName() + "-" + path + "-"
@@ -349,11 +347,12 @@ public class Route implements ServerReadyListener {
 			@Nullable Integer port) {
 		String localhost = hostname == null ? "localhost" : hostname;
 		int localport = port == null ? 80 : port;
-		String path = jsonSchemaPath.startsWith("/") ? jsonSchemaPath : "/"
-				+ jsonSchemaPath;
-		// FIXME do somehting about https!!
 
 		if (jsonSchemaPath != null) {
+			String path = jsonSchemaPath.startsWith("/") ? jsonSchemaPath : "/"
+					+ jsonSchemaPath;
+			// FIXME do somehting about https!!
+			
 			try {
 				URI uri = new URI(String.format("http://%s:%d%s", localhost,
 						localport, path));

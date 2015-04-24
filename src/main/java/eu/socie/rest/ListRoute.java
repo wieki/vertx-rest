@@ -173,7 +173,7 @@ public abstract class ListRoute extends Route {
 			AsyncResult<Message<JsonObject>> results, YokeRequest request) {
 
 		if (results.succeeded()) {
-			String id = CreateUtil.geIdFromResults(results);
+			String id = CreateUtil.getIdFromResults(results);
 
 			YokeResponse response = request.response();
 
