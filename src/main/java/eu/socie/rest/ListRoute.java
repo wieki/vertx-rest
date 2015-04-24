@@ -118,7 +118,7 @@ public abstract class ListRoute extends Route {
 	 * Create an request for the async Mongo persistor from the document
 	 * submitted in the request
 	 * 
-	 * @param request
+	 * @param request is the request passed from the client
 	 */
 	protected final void createSearchRequest(YokeRequest request) {
 		// FIXME this makes no sense, get requests don't have a json body!

@@ -99,7 +99,7 @@ public class Route implements ServerReadyListener {
 	 * 
 	 * @param path
 	 *            is relative the path within the URL
-	 * @param jsonSchemaPath
+	 * @param jsonSchemaPath is the local path to the json schema file
 	 */
 	public Route(String path, String jsonSchemaPath, Vertx vertx) {
 		this(path, vertx, VERSION_PATTERN);

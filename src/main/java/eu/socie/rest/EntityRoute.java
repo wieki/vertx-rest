@@ -171,7 +171,7 @@ public abstract class EntityRoute extends Route {
 	 * Create an request for the async Mongo persistor from the document
 	 * submitted in the request
 	 * 
-	 * @param request
+	 * @param request is the request passed from the client
 	 */
 	protected final void createSearchRequest(YokeRequest request) {
 		JsonObject find = new JsonObject();
