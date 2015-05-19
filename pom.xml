@@ -59,8 +59,18 @@
 
 	<repositories>
 		<repository>
-			<id>sonatype-nexus-snapshots</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<releases>
+				<enabled>false</enabled>
+				<updatePolicy>always</updatePolicy>
+				<checksumPolicy>warn</checksumPolicy>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>never</updatePolicy>
+				<checksumPolicy>fail</checksumPolicy>
+			</snapshots>
+			<id>Tizin Snapshots</id>
+			<url>https://dev.tizin.nl/maven/content/repositories/snapshots/</url>
 		</repository>
 	</repositories>
 
@@ -347,6 +357,12 @@
 			<id>bintray</id>
 			<url>https://api.bintray.com/maven/socie/vertx-mods/eu.socie.rest</url>
 		</repository>
+		<snapshotRepository>
+			<uniqueVersion>true</uniqueVersion>
+			<id>tizin_snapshots</id>
+			<name>Tizin Snapshots</name>
+			<url>https://dev.tizin.nl/maven/content/repositories/snapshots/</url>
+		</snapshotRepository>
 	</distributionManagement>
 	<profiles>
 		<profile>

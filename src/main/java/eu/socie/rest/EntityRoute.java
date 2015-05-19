@@ -226,12 +226,13 @@ public abstract class EntityRoute extends Route {
 
 		if (result.succeeded()) {
 
-			String id = request.getParameter("id");
+			String id = request.getParameter(getIdParam());
 			JsonArray results = result.result().body();
 
 			if (results == null || results.size() == 0) {
 				replyError(request, ERROR_CLIENT_NOT_FOUND,
 						String.format(NOT_FOUND, id));
+				return;
 			}
 
 			String version = getVersionFromHeader(request);

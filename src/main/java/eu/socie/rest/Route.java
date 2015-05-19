@@ -289,10 +289,7 @@ public class Route implements ServerReadyListener {
 	}
 
 	protected void replyError(YokeRequest request, int code, String message) {
-
-		String error = String.format("%s", message);
-
-		request.response().setChunked(true).setStatusCode(code).end(error);
+		request.response().setChunked(true).setStatusCode(code).end(message);
 	}
 
 	protected void addJsonContentHeader(YokeRequest request) {

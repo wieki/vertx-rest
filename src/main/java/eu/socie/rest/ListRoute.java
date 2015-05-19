@@ -6,8 +6,10 @@ import java.util.Map.Entry;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
+import org.vertx.java.core.eventbus.ReplyFailure;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
@@ -53,6 +55,7 @@ public abstract class ListRoute extends Route {
 		if (request.body() == null) {
 			replyError(request, ERROR_CLIENT_BAD_REQUEST,
 					ERROR_DELETE_DOC_EMPTY);
+			throw new VertxException(ERROR_DELETE_DOC_EMPTY);
 		}
 		return request.body();
 
@@ -77,6 +80,7 @@ public abstract class ListRoute extends Route {
 	protected JsonObject createCreateDocument(YokeRequest request) {
 		if (request.body() == null) {
 			replyError(request, ERROR_CLIENT_BAD_REQUEST, ERROR_ENTITY_EMPTY);
+			throw new VertxException(ERROR_DELETE_DOC_EMPTY);
 		}
 
 		return request.body();
