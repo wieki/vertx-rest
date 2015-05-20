@@ -348,7 +348,7 @@ public class Route implements ServerReadyListener {
 		if (jsonSchemaPath != null) {
 			String path = jsonSchemaPath.startsWith("/") ? jsonSchemaPath : "/"
 					+ jsonSchemaPath;
-			// FIXME do somehting about https!!
+			// FIXME do something about https!!
 			
 			try {
 				URI uri = new URI(String.format("http://%s:%d%s", localhost,

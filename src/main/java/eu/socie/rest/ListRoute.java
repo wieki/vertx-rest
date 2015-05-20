@@ -9,7 +9,6 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxException;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
-import org.vertx.java.core.eventbus.ReplyFailure;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
