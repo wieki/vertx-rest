@@ -1,17 +1,7 @@
 package eu.socie.rest;
 
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.json.JsonObject;
 
-import com.jetdrone.vertx.yoke.core.YokeFileUpload;
-import com.jetdrone.vertx.yoke.middleware.YokeRequest;
-import com.jetdrone.vertx.yoke.middleware.YokeResponse;
-
-import eu.socie.mongo_async_persistor.util.MongoFileUtil;
+import io.vertx.rxjava.core.Vertx;
 
 public class FileRoute extends Route {
 
@@ -28,29 +18,35 @@ public class FileRoute extends Route {
 	}
 
 	private void init() {
-		get(r -> handleFileGet(r));
-		post(r -> handleFilePost(r));
+		//get(r -> handleFileGet(r));
+		//post(r -> handleFilePost(r));
 	}
 
-	private void handleFilePost(YokeRequest request) {
-
-		if (request.files() != null) {
-			request.files().forEach(
-					(key, upload) -> processFile(request, key, upload));
+/*	private void handleFilePost(RoutingContext context) {
+		
+		if (context.fileUploads()!= null) {
+			context.fileUploads().forEach((upload) -> processFile(context, upload));
+		
 		}
 
 	}
 
-	private void processFile(YokeRequest request, String key,
-			YokeFileUpload upload) {
-		// TODO consider reading files in chunks, to enable large file support
-		vertx.fileSystem().readFile(upload.path(),
-				result -> handleFileRead(request, upload, result));
+	private void processFile(RoutingContext context,
+			FileUpload upload) {
+		// FIXME consider reading files in chunks, to enable large file support
+		
+		vertx.fileSystem()
+			.readFileObservable(upload.uploadedFileName()).flatMap(buffer -> )
+		
+		vertx.fileSystem().readFile(upload.uploadedFileName(),
+				result -> handleFileRead(context, upload, result));
 	}
 
-	private void handleFileRead(YokeRequest request, YokeFileUpload upload,
-			AsyncResult<Buffer> fileBuffer) {
-		mongoHelper.sendStoreFile(upload.filename(), upload.contentType(),
+	private void handleFileRead(RoutingContext request, FileUpload upload,
+			Buffer fileBuffer) {
+		
+		mongoClient.
+		mongoClient.sendStoreFile(upload.filename(), upload.contentType(),
 				fileBuffer.result(), r -> handleFileStoreResult(request, r));
 
 		upload.delete();
@@ -96,7 +92,7 @@ public class FileRoute extends Route {
 
 		fileMsg.putString("_id", fileId);
 
-		mongoHelper.sendCheckFile(fileMsg, handler);
+		mongoClient.sendCheckFile(fileMsg, handler);
 	}
 	
 	protected void doFileGet(YokeRequest request, String fileId, boolean isDownload){
@@ -104,7 +100,7 @@ public class FileRoute extends Route {
 
 		fileMsg.putString("_id", fileId);
 
-		mongoHelper.sendGetFile(fileMsg,
+		mongoClient.sendGetFile(fileMsg,
 				fileRequest -> handleFileResponse(fileRequest, request, isDownload));
 	}
 
@@ -135,6 +131,6 @@ public class FileRoute extends Route {
 			request.response().setStatusCode(Route.ERROR_CLIENT_NOT_FOUND)
 					.end(errMsg);
 		}
-	}
+	}*/
 
 }

@@ -3,8 +3,9 @@
  */
 package eu.socie.rest.exception;
 
-import org.vertx.java.core.VertxException;
-import org.vertx.java.core.json.JsonObject;
+import io.vertx.core.VertxException;
+import io.vertx.core.json.JsonObject;
+
 
 /**
  * @author Bram Wiekens

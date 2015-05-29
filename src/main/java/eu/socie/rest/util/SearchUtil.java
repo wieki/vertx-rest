@@ -3,11 +3,6 @@
  */
 package eu.socie.rest.util;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.vertx.java.core.json.JsonObject;
 
 /**
  * @author Bram Wiekens
@@ -15,23 +10,13 @@ import org.vertx.java.core.json.JsonObject;
  */
 public class SearchUtil {
 
-	private static final String LIMIT = "limit";
+	/*private static final String LIMIT = "limit";
 	private static final String SORT = "sort";
 	private static final int ASCENDING = 1;
-	private static final int DESCENDING = -1;
+	private static final int DESCENDING = -1;*/
 
-	public static JsonObject createSearchDocument(JsonObject searchDoc,
-			String collection) {
-		JsonObject find = new JsonObject();
 
-		find.putString("collection", collection);
-
-		find.putObject("document", searchDoc);
-
-		return find;
-	}
-
-	public static JsonObject createSearchDocument(JsonObject searchDoc,
+/*	public static JsonObject createSearchDocument(JsonObject searchDoc,
 			String collection, List<Map.Entry<String, String>> params) {
 		Params convParams = convertParams(params);
 
@@ -143,6 +128,6 @@ public class SearchUtil {
 			return String.format("%s:%s", key, value);
 		}
 
-	}
+	}*/
 
 }

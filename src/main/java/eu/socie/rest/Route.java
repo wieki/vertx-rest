@@ -1,5 +1,20 @@
 package eu.socie.rest;
 
+import io.vertx.core.Handler;
+import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.rxjava.core.MultiMap;
+import io.vertx.rxjava.core.Vertx;
+import io.vertx.rxjava.core.http.HttpServerRequest;
+import io.vertx.rxjava.core.http.HttpServerResponse;
+import io.vertx.rxjava.ext.apex.Router;
+import io.vertx.rxjava.ext.apex.RoutingContext;
+import io.vertx.rxjava.ext.mongo.MongoClient;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -9,22 +24,9 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.MultiMap;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.eventbus.ReplyException;
-import org.vertx.java.core.json.JsonElement;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
-
 import com.github.fge.jsonschema.core.report.ProcessingReport;
-import com.jetdrone.vertx.yoke.middleware.Router;
-import com.jetdrone.vertx.yoke.middleware.YokeRequest;
-import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
 import eu.socie.rest.exception.ProcessingException;
-import eu.socie.rest.mongo.MongoHelper;
 import eu.socie.rest.schema.JsonSchemaValidator;
 import eu.socie.rest.schema.ProcessReportEncoder;
 
@@ -40,11 +42,11 @@ public class Route implements ServerReadyListener {
 	private String path;
 	private List<Route> routes;
 	// private Module module;
-	private Handler<YokeRequest> put;
-	private Handler<YokeRequest> post;
-	private Handler<YokeRequest> get;
-	private Handler<YokeRequest> patch;
-	private Handler<YokeRequest> delete;
+	private Handler<RoutingContext> put;
+	private Handler<RoutingContext> post;
+	private Handler<RoutingContext> get;
+	private Handler<RoutingContext> patch;
+	private Handler<RoutingContext> delete;
 
 	// TODO Make this a configuration parameter
 	public static final long TIMEOUT = 2000;
@@ -75,20 +77,23 @@ public class Route implements ServerReadyListener {
 	public final static String ERROR_CLIENT_VERSION_MSG = "No version in accept header specified";
 	public final static String ERROR_CLIENT_EMPTY_DOC_MSG = "Cannot process an empty document";
 	
+	protected static Logger logger;
+	
 	private final static String VERSION_PATTERN = "v[0-9]+";
 
 	private Pattern versionPattern;
 
 	protected JsonSchemaValidator validator;
-	protected MongoHelper mongoHelper;
+	protected MongoClient mongoClient;
 	protected Vertx vertx;
 	private String jsonSchemaPath;
-	protected Logger logger;
+	
 
 	public Route(String path, Vertx vertx) {
 		this(path, vertx, VERSION_PATTERN);
 
-		mongoHelper = new MongoHelper(vertx);
+		
+		// FIXME init mongo client
 
 		validator = null;
 	}
@@ -104,7 +109,7 @@ public class Route implements ServerReadyListener {
 	public Route(String path, String jsonSchemaPath, Vertx vertx) {
 		this(path, vertx, VERSION_PATTERN);
 
-		mongoHelper = new MongoHelper(vertx);
+		// FIXME init mongo client
 
 		this.jsonSchemaPath = jsonSchemaPath;
 
@@ -116,10 +121,8 @@ public class Route implements ServerReadyListener {
 		this.vertx = vertx;
 		versionPattern = Pattern.compile(pattern);
 
-		// FIXME consider obtaining the logger differently?
-		String loggerName = this.getClass().getName() + "-" + path + "-"
-				+ System.identityHashCode(this);
-		logger = LoggerFactory.getLogger(loggerName);
+		logger = LoggerFactory
+				.getLogger(getClass());
 	}
 
 	public String getPath() {
@@ -143,72 +146,69 @@ public class Route implements ServerReadyListener {
 		return this;
 	}
 
-	public Route get(Handler<YokeRequest> handler) {
+	public Route get(Handler<RoutingContext> handler) {
 		this.get = handler;
 		return this;
 	}
 
-	public Route put(Handler<YokeRequest> handler) {
+	public Route put(Handler<RoutingContext> handler) {
 		this.put = handler;
 		return this;
 	}
 
-	public Route post(Handler<YokeRequest> handler) {
+	public Route post(Handler<RoutingContext> handler) {
 		this.post = handler;
 		return this;
 	}
 
-	public Route patch(Handler<YokeRequest> handler) {
+	public Route patch(Handler<RoutingContext> handler) {
 		this.patch = handler;
 		return this;
 	}
 
-	public Route delete(Handler<YokeRequest> handler) {
+	public Route delete(Handler<RoutingContext> handler) {
 		this.delete = handler;
 		return this;
 	}
 
 	public void bind(String path, Router router) {
 		StringBuffer options = new StringBuffer("OPTIONS");
-
+		
 		if (put != null) {
-			router.put(path, put);
+			router.put(path).handler(put);
 			options.append(", " + PUT);
 		} else {
-			router.put(path,
-					(r) -> createNotAllowedRequest(r, options.toString()));
+			router.put(path).handler(r -> createNotAllowedRequest(r, options.toString()));
 		}
 		if (post != null) {
-			router.post(path, post);
+			router.post(path).handler(post);
 			options.append(", " + POST);
 		} else {
-			router.post(path,
-					(r) -> createNotAllowedRequest(r, options.toString()));
+			router.post(path).handler((r) -> createNotAllowedRequest(r, options.toString()));
 		}
 		if (get != null) {
-			router.get(path, get);
+			router.get(path).handler(get);
 			options.append(", " + GET);
 		} else {
-			router.get(path,
-					(r) -> createNotAllowedRequest(r, options.toString()));
+			router.get(path).handler((r) -> createNotAllowedRequest(r, options.toString()));
 		}
 		if (delete != null) {
-			router.delete(path, delete);
+			router.delete(path).handler(delete);
 			options.append(", " + DELETE);
 		} else {
-			router.delete(path,
+			router.delete(path).handler(
 					(r) -> createNotAllowedRequest(r, options.toString()));
 		}
 		if (patch != null) {
-			router.patch(path, patch);
+			router.route(HttpMethod.PATCH, path).handler(patch);
 			options.append(", " + PATCH);
 		} else {
-			router.patch(path,
-					(r) -> createNotAllowedRequest(r, options.toString()));
+			router.route(HttpMethod.PATCH, path).handler((r) -> createNotAllowedRequest(r, options.toString()));
 		}
 
 		String verbs = options.toString();
-		router.options(path, (r) -> handleOptions(verbs, r));
+		
+		router.options(path).handler((r) -> handleOptions(verbs, r));
 	}
 
 	/**
@@ -216,10 +216,12 @@ public class Route implements ServerReadyListener {
 	 * 
 	 * @param verbs
 	 *            are the methods available to call on this url
-	 * @param request
-	 *            is the request to reply the available methods to
+	 * @param context
+	 *            is the Http context that contains  to reply the available methods to
 	 */
-	protected void handleOptions(String verbs, YokeRequest request) {
+	protected void handleOptions(String verbs, RoutingContext context) {
+		HttpServerRequest request = context.request();
+		
 		MultiMap map = request.response().headers();
 		map.add("Allow", verbs);
 
@@ -257,8 +259,8 @@ public class Route implements ServerReadyListener {
 	 * @param verbs
 	 *            are the available methods the requester can use on this uri
 	 */
-	protected void createNotAllowedRequest(YokeRequest request, String verbs) {
-		YokeResponse response = request.response();
+	protected void createNotAllowedRequest(RoutingContext context, String verbs) {
+		HttpServerResponse response = context.request().response();
 
 		response.headers().add("Allow", verbs);
 
@@ -266,21 +268,23 @@ public class Route implements ServerReadyListener {
 
 	}
 
-	protected void replyError(YokeRequest request, int statusCode,
+	protected void replyError(RoutingContext context, int statusCode,
 			ReplyException exception) {
 
 		String error = String.format("%d : %s", exception.failureCode(),
 				exception.getMessage());
 
-		request.response().setChunked(true).setStatusCode(statusCode)
+		context.request().response().setChunked(true).setStatusCode(statusCode)
 				.end(error);
 	}
 
-	protected void replyError(YokeRequest request, int code,
+	protected void replyError(RoutingContext context, int code,
 			ProcessingException exception) {
 
+		HttpServerRequest request = context.request();
+		
 		if (exception.hasJsonReport()) {
-			addJsonContentHeader(request);
+			addJsonContentHeader(context);
 		}
 
 		String error = String.format("%s", exception.getMessage());
@@ -288,17 +292,21 @@ public class Route implements ServerReadyListener {
 		request.response().setChunked(true).setStatusCode(code).end(error);
 	}
 
-	protected void replyError(YokeRequest request, int code, String message) {
+	protected void replyError(RoutingContext context, int code, String message) {
+		HttpServerRequest request = context.request();
+		
 		request.response().setChunked(true).setStatusCode(code).end(message);
 	}
 
-	protected void addJsonContentHeader(YokeRequest request) {
-		YokeResponse response = request.response();
+	protected void addJsonContentHeader(RoutingContext context) {
+		HttpServerResponse response = context.request().response();
 		response.headers().add("Content-Type", "application/json");
 
 	}
 
-	protected String getVersionFromHeader(YokeRequest request) {
+	protected String getVersionFromHeader(RoutingContext context) {
+		HttpServerRequest request = context.request();
+		
 		String acceptHeader = request.getHeader("Accept");
 		String version = "";
 
@@ -332,8 +340,20 @@ public class Route implements ServerReadyListener {
 		return object;
 	}
 
-	protected void respondJsonResults(YokeRequest request, JsonElement obj) {
-		addJsonContentHeader(request);
+	protected void respondJsonResults(RoutingContext context, JsonArray obj) {
+		HttpServerRequest request = context.request();
+		
+		addJsonContentHeader(context);
+
+		request.response().setChunked(true).write(obj.toString())
+				.setStatusCode(SUCCESS_OK).end();
+	}
+	
+	
+	protected void respondJsonResults(RoutingContext context, JsonObject obj) {
+		HttpServerRequest request = context.request();
+		
+		addJsonContentHeader(context);
 
 		request.response().setChunked(true).write(obj.toString())
 				.setStatusCode(SUCCESS_OK).end();

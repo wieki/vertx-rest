@@ -1,18 +1,12 @@
 package eu.socie.rest;
 
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.eventbus.ReplyException;
-import org.vertx.java.core.json.JsonArray;
-import org.vertx.java.core.json.JsonObject;
-
-import com.jetdrone.vertx.yoke.middleware.YokeRequest;
-import com.jetdrone.vertx.yoke.middleware.YokeResponse;
-
+import io.vertx.core.json.JsonObject;
+import io.vertx.rxjava.core.Vertx;
+import io.vertx.rxjava.core.http.HttpServerRequest;
+import io.vertx.rxjava.core.http.HttpServerResponse;
+import io.vertx.rxjava.ext.apex.RoutingContext;
 import eu.socie.rest.exception.ProcessingException;
-import eu.socie.rest.util.CreateUtil;
-import eu.socie.rest.util.DeleteUtil;
+import eu.socie.rest.exception.RestException;
 
 public abstract class EntityRoute extends Route {
 
@@ -62,71 +56,66 @@ public abstract class EntityRoute extends Route {
 		patch((r) -> createPatchRequest(r));
 	}
 
-	protected JsonObject validateAndConvertPatchDocument(JsonObject obj){
+	protected JsonObject validateAndConvertPatchDocument(JsonObject obj) {
 		return obj;
 	}
-	
-	private final void createPatchRequest(YokeRequest request) {
-		JsonObject d = request.body();
-		
+
+	private final void createPatchRequest(RoutingContext context) {
+		HttpServerRequest request = context.request();
+
+		JsonObject d = context.getBodyAsJson();
+
 		JsonObject doc = validateAndConvertPatchDocument(d);
-		
+
 		String idParam = getIdParam();
-		String id = request.getParameter(idParam);
+		String id = request.getParam(idParam);
 
 		JsonObject query = new JsonObject();
-		query.putString("_id", id);
+		query.put("_id", id);
 
-		JsonObject update = CreateUtil.createUpdateDocument(doc, query,
-				collection);
-
-		mongoHelper.sendUpdate(update, r -> handlePatchResult(request, r, id));
-	}
-
-	protected void handlePatchResult(YokeRequest request,
-			AsyncResult<Message<JsonObject>> result, String id) {
-		if (result.succeeded()) {
-			JsonObject doc = result.result().body();
-			doc.putString("result_id", id);
-			
-			convertPatchResult(doc);
-			request.response().setStatusCode(Route.SUCCESS_OK).end();
-		} else {
-			String msg = result.cause().getMessage();
-			// TODO update message to something more useful
-			replyError(request, Route.ERROR_SERVER_GENERAL_ERROR, msg);
-		}
+		// FIXME add error handling
+		mongoClient.updateObservable(collection, query, doc).subscribe(
+				r -> handlePatchResult(context, r, id));
 
 	}
-	
-	protected JsonObject convertPatchResult(JsonObject doc){
-		return doc;
+
+	protected void handlePatchResult(RoutingContext request, Void result,
+			String id) {
+
+		request.response().setStatusCode(Route.SUCCESS_OK).end();
 	}
 
-	protected JsonObject createDeleteDocument(YokeRequest request) {
+	protected JsonObject createDeleteDocument(RoutingContext context) {
 		JsonObject queryDoc = new JsonObject();
 
-		String id = request.getParameter(idParam);
+		HttpServerRequest request = context.request();
 
-		queryDoc.putString("_id", id);
+		String id = request.getParam(idParam);
 
-		return DeleteUtil.createDeleteDocument(queryDoc, collection, true);
+		queryDoc.put("_id", id);
+
+		return queryDoc;
 
 	}
 
-	protected final void createDeleteRequest(YokeRequest request) {
-		JsonObject delete = createDeleteDocument(request);
+	protected final void createDeleteRequest(RoutingContext context) {
+		JsonObject delete = createDeleteDocument(context);
 
-		mongoHelper.sendDelete(delete,
-				results -> respondDeleteResults(results, request));
+		// FIXME add error handling!!
+		mongoClient.removeObservable(collection, delete).subscribe(
+				results -> respondDeleteResults(results, context));
+
 	}
 
-	protected JsonObject createUpdateDocument(YokeRequest request) {
-		JsonObject updateDoc = request.body();
-		if (!updateDoc.containsField("_id")) {
-			String id = request.getParameter(getIdParam());
+	protected JsonObject createUpdateDocument(RoutingContext context) {
+		HttpServerRequest request = context.request();
 
-			updateDoc.putString("_id", id);
+		JsonObject updateDoc = context.getBodyAsJson();
+
+		if (!updateDoc.containsKey("_id")) {
+			String id = request.getParam(getIdParam());
+
+			updateDoc.put("_id", id);
 		}
 
 		return updateDoc;
@@ -137,32 +126,40 @@ public abstract class EntityRoute extends Route {
 		return validateDocument(object);
 	}
 
-	protected final void createUpdateRequest(YokeRequest request) {
-		String version = getVersionFromHeader(request);
+	protected final void createUpdateRequest(RoutingContext context) {
+		String version = getVersionFromHeader(context);
 
 		try {
 
 			JsonObject doc = validateAndConvertDocument(version,
-					createUpdateDocument(request));
+					createUpdateDocument(context));
 
-			JsonObject create = CreateUtil
-					.createCreateDocument(doc, collection);
+			String id = doc.getString("_id");
+			JsonObject queryDoc = new JsonObject();
+			queryDoc.put("_id", id);
 
-			mongoHelper.sendCreateOrUpdate(create,
-					results -> respondCreateResults(results, request));
+			mongoClient
+					.updateObservable(collection, queryDoc, doc)
+					.doOnError(
+							ex -> replyError(context,
+									ERROR_SERVER_GENERAL_ERROR, ex.getMessage()))
+					.subscribe(
+							results -> responseUpdateResults(results, context));
 
 		} catch (ProcessingException pe) {
-			replyError(request, ERROR_CLIENT_METHOD_UNACCEPTABLE, pe);
+			replyError(context, ERROR_CLIENT_METHOD_UNACCEPTABLE, pe);
 		}
 
 	}
 
-	protected JsonObject createSearchDocument(YokeRequest request) {
+	protected JsonObject createSearchDocument(RoutingContext context) {
 		JsonObject doc = new JsonObject();
 
-		String id = request.getParameter(getIdParam());
+		HttpServerRequest request = context.request();
 
-		doc.putString("_id", id);
+		String id = request.getParam(getIdParam());
+
+		doc.put("_id", id);
 
 		return doc;
 	}
@@ -171,80 +168,60 @@ public abstract class EntityRoute extends Route {
 	 * Create an request for the async Mongo persistor from the document
 	 * submitted in the request
 	 * 
-	 * @param request is the request passed from the client
+	 * @param request
+	 *            is the request passed from the client
 	 */
-	protected final void createSearchRequest(YokeRequest request) {
+	protected final void createSearchRequest(RoutingContext context) {
 		JsonObject find = new JsonObject();
-		JsonObject doc = createSearchDocument(request);
 
-		find.putString("collection", collection);
+		// Get all fields
+		JsonObject allFields = new JsonObject();
 
-		find.putObject("document", doc);
-
-		mongoHelper.sendFind(find,
-				results -> respondFindResults(results, request));
+		mongoClient
+				.findOneObservable(collection, find, allFields)
+				.doOnError(
+						ex -> replyError(context, ERROR_SERVER_GENERAL_ERROR,
+								ex.getMessage()))
+				.subscribe(results -> respondFindResults(results, context));
 	}
 
-	protected void respondDeleteResults(AsyncResult<Message<Integer>> results,
-			YokeRequest request) {
+	protected void respondDeleteResults(Void result, RoutingContext context) {
 
-		if (results.succeeded()) {
+		HttpServerRequest request = context.request();
 
-			request.response().setChunked(true).setStatusCode(SUCCESS_OK).end();
-		} else {
-			ReplyException ex = (ReplyException) results.cause();
-			replyError(request, ERROR_SERVER_GENERAL_ERROR, ex);
+		request.response().setChunked(true).setStatusCode(SUCCESS_OK).end();
+
+	}
+
+	protected void responseUpdateResults(Void results,
+			RoutingContext context) {
+
+		HttpServerRequest request = context.request();
+		HttpServerResponse response = request.response();
+
+		response.setChunked(true).setStatusCode(SUCCESS_OK).end();
+
+	}
+
+	protected JsonObject convertFindResults(String version, JsonObject result) {
+		return result;
+	}
+
+	protected final void respondFindResults(JsonObject result,
+			RoutingContext context) {
+
+		String id = context.request().getParam(getIdParam());
+
+		if (result == null) {
+			throw new RestException(String.format(NOT_FOUND, id),
+					ERROR_CLIENT_NOT_FOUND);
 		}
 
-		// log.debug("Returned results from database: " + results.size());
+		String version = getVersionFromHeader(context);
 
-	}
+		JsonObject convertedResult = convertFindResults(version, result);
 
-	protected void respondCreateResults(
-			AsyncResult<Message<JsonObject>> results, YokeRequest request) {
-
-		if (results.succeeded()) {
-
-			YokeResponse response = request.response();
-
-			response.setChunked(true).setStatusCode(SUCCESS_OK).end();
-		} else {
-			ReplyException ex = (ReplyException) results.cause();
-			replyError(request, ERROR_SERVER_GENERAL_ERROR, ex);
-		}
-
-		// log.debug("Returned results from database: " + results.size());
-
-	}
-
-	protected JsonArray convertFindResults(String version, JsonArray results) {
-		return results;
-	}
-
-	protected final void respondFindResults(
-			AsyncResult<Message<JsonArray>> result, YokeRequest request) {
-
-		if (result.succeeded()) {
-
-			String id = request.getParameter(getIdParam());
-			JsonArray results = result.result().body();
-
-			if (results == null || results.size() == 0) {
-				replyError(request, ERROR_CLIENT_NOT_FOUND,
-						String.format(NOT_FOUND, id));
-				return;
-			}
-
-			String version = getVersionFromHeader(request);
-
-			JsonArray convertedResults = convertFindResults(version, results);
-
-			respondJsonResults(request, convertedResults.get(0));
-
-		} else {
-			ReplyException ex = (ReplyException) result.cause();
-			replyError(request, ERROR_SERVER_GENERAL_ERROR, ex);
-		}
+		respondJsonResults(context, convertedResult);
 	}
 
 	/**

@@ -1,39 +1,6 @@
 package eu.socie.rest.jwt;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.json.JsonArray;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.platform.Verticle;
-
-import com.hazelcast.util.Base64;
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.JWSSigner;
-import com.nimbusds.jose.JWSVerifier;
-import com.nimbusds.jose.crypto.RSASSASigner;
-import com.nimbusds.jose.crypto.RSASSAVerifier;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.ReadOnlyJWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
+import io.vertx.rxjava.core.AbstractVerticle;
 
 /**
  * Provide JWT token security and validation
@@ -41,9 +8,9 @@ import com.nimbusds.jwt.SignedJWT;
  * @author Bram Wiekens
  *
  */
-public class JWTSecurity extends Verticle {
+public class JWTSecurity extends AbstractVerticle {
 
-	public final static String CONFIG_KEYSTORE_PATH = "keystore_path";
+	/*public final static String CONFIG_KEYSTORE_PATH = "keystore_path";
 	public final static String CONFIG_KEYSTORE_PASSWORD = "keystore_password";
 	public final static String CONFIG_KEYSTORE_TYPE = "keystore_type";
 	public final static String CONFIG_KEYSTORE_ALIAS = "keystore_alias";
@@ -98,7 +65,7 @@ public class JWTSecurity extends Verticle {
 						keyStoreAlias));
 	}
 
-	/**
+	*//**
 	 * Try to read the key store file from the given path. If reading succeeds,
 	 * listener will be bound to handle JWT requests.
 	 * 
@@ -111,7 +78,7 @@ public class JWTSecurity extends Verticle {
 	 * @param keyStoreAlias
 	 *            is the alias to be used to retrieve the keys from the key
 	 *            store
-	 */
+	 *//*
 	private void handleKeyStore(AsyncResult<Buffer> fileReadResult,
 			String keyStorePassword, String keyStoreType, String keyStoreAlias) {
 		if (fileReadResult.succeeded()) {
@@ -216,12 +183,12 @@ public class JWTSecurity extends Verticle {
 
 	}
 
-	/**
+	*//**
 	 * Validates if the information in the JWT token conforms the signature.
 	 * 
 	 * @param jwtMessage
 	 *            is the message that contains the JWT token to be verified
-	 */
+	 *//*
 	private void validateJWTToken(Message<String> jwtMessage) {
 		String jwtToken = jwtMessage.body();
 		boolean isVerified = false;
@@ -252,7 +219,7 @@ public class JWTSecurity extends Verticle {
 
 	}
 
-	/**
+	*//**
 	 * Creates a new signed JWT token to be used for further verification. To
 	 * get a signed JWT token at least the subject should be specified in the
 	 * request message in a subject field. The issuer can optionally be
@@ -268,7 +235,7 @@ public class JWTSecurity extends Verticle {
 	 * @param password
 	 *            is the password needed to get the private key from the
 	 *            keystore.
-	 */
+	 *//*
 	private void createJWTToken(Message<JsonObject> jwtMessage, String alias,
 			String password) {
 		JsonObject obj = jwtMessage.body();
@@ -325,7 +292,7 @@ public class JWTSecurity extends Verticle {
 
 	}
 
-	/**
+	*//**
 	 * Convenience method to create a response JSON object based on the JWT
 	 * token and the public key. Both should be send to the client, so the
 	 * client is able to verify the message.
@@ -335,12 +302,12 @@ public class JWTSecurity extends Verticle {
 	 * @param publicKey
 	 *            the public key which the user can use to verify the message
 	 * @return a json ojbect with the JWT token and public key
-	 */
+	 *//*
 	private JsonObject createResponse(SignedJWT jwtToken, RSAPublicKey publicKey) {
 		JsonObject obj = new JsonObject();
 		obj.putString("jwt_token", jwtToken.serialize());
 
-		/*
+		
 		 * byte[] data = Base64.encode(publicKey.getEncoded());
 		 * 
 		 * X509EncodedKeySpec spec = new
@@ -350,12 +317,12 @@ public class JWTSecurity extends Verticle {
 		 * 
 		 * } catch (NoSuchAlgorithmException | InvalidKeySpecException e) { //
 		 * TODO Auto-generated catch block e.printStackTrace(); }
-		 */
+		 
 
 		obj.putString("key_alg", publicKey.getAlgorithm());
 		obj.putBinary("public_key", Base64.encode(publicKey.getEncoded()));
 
 		return obj;
-	}
+	}*/
 
 }

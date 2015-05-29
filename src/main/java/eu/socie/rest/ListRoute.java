@@ -1,26 +1,20 @@
 package eu.socie.rest;
 
+import io.vertx.core.VertxException;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.rxjava.core.MultiMap;
+import io.vertx.rxjava.core.Vertx;
+import io.vertx.rxjava.core.http.HttpServerRequest;
+import io.vertx.rxjava.core.http.HttpServerResponse;
+import io.vertx.rxjava.ext.apex.RoutingContext;
+
 import java.net.URLDecoder;
 import java.util.List;
-import java.util.Map.Entry;
-
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxException;
-import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.eventbus.ReplyException;
-import org.vertx.java.core.json.JsonArray;
-import org.vertx.java.core.json.JsonObject;
-
-import com.jetdrone.vertx.yoke.middleware.YokeRequest;
-import com.jetdrone.vertx.yoke.middleware.YokeResponse;
 
 import eu.socie.rest.exception.ProcessingException;
-import eu.socie.rest.util.CreateUtil;
-import eu.socie.rest.util.DeleteUtil;
-import eu.socie.rest.util.SearchUtil;
 
-public abstract class ListRoute extends Route {
+public abstract class ListRoute extends Route { 
 
 	private String collection;
 
@@ -50,23 +44,26 @@ public abstract class ListRoute extends Route {
 		delete((r) -> createDeleteRequest(r));
 	}
 
-	protected JsonObject createDeleteDocument(YokeRequest request) {
-		if (request.body() == null) {
-			replyError(request, ERROR_CLIENT_BAD_REQUEST,
+	protected JsonObject createDeleteDocument(RoutingContext context) {
+
+		if (context.getBodyAsJson() == null) {
+			replyError(context, ERROR_CLIENT_BAD_REQUEST,
 					ERROR_DELETE_DOC_EMPTY);
 			throw new VertxException(ERROR_DELETE_DOC_EMPTY);
 		}
-		return request.body();
+		return context.getBodyAsJson();
 
 	}
 
-	protected final void createDeleteRequest(YokeRequest request) {
-		JsonObject queryDoc = request.body();
+	protected final void createDeleteRequest(RoutingContext context) {
+		JsonObject queryDoc = context.getBodyAsJson();
 
-		JsonObject delete = DeleteUtil.createDeleteDocument(queryDoc, collection, false);
-
-		mongoHelper.sendDelete(delete,
-				results -> respondDeleteResults(results, request));
+		mongoClient
+				.removeObservable(collection, queryDoc)
+				.doOnError(
+						ex -> replyError(context, ERROR_SERVER_GENERAL_ERROR,
+								ex.getMessage()))
+				.subscribe(results -> respondDeleteResults(results, context));
 
 	}
 
@@ -76,30 +73,29 @@ public abstract class ListRoute extends Route {
 		return validateDocument(object);
 	}
 
-	protected JsonObject createCreateDocument(YokeRequest request) {
-		if (request.body() == null) {
-			replyError(request, ERROR_CLIENT_BAD_REQUEST, ERROR_ENTITY_EMPTY);
+	protected JsonObject createCreateDocument(RoutingContext context) {
+		if (context.getBodyAsJson() == null) {
+
+			replyError(context, ERROR_CLIENT_BAD_REQUEST, ERROR_ENTITY_EMPTY);
 			throw new VertxException(ERROR_DELETE_DOC_EMPTY);
 		}
 
-		return request.body();
+		return context.getBodyAsJson();
 	}
 
-	protected final void createCreateRequest(YokeRequest request) {
-		String version = getVersionFromHeader(request);
+	protected final void createCreateRequest(RoutingContext context) {
+		String version = getVersionFromHeader(context);
 
 		try {
 			JsonObject doc = validateAndConvertCreateDocument(version,
-					createCreateDocument(request));
+					createCreateDocument(context));
 
-			JsonObject create = CreateUtil
-					.createCreateDocument(doc, collection);
-
-			mongoHelper.sendCreateOrUpdate(create,
-					results -> respondCreateResults(results, request));
+			mongoClient.insertObservable(collection, doc)
+			.doOnError(ex -> replyError(context, ERROR_SERVER_GENERAL_ERROR, ex.getMessage()))
+			.subscribe(results -> respondCreateResults(results, context));
 
 		} catch (ProcessingException pe) {
-			replyError(request, ERROR_CLIENT_METHOD_UNACCEPTABLE, pe);
+			replyError(context, ERROR_CLIENT_METHOD_UNACCEPTABLE, pe);
 		}
 	}
 
@@ -109,11 +105,11 @@ public abstract class ListRoute extends Route {
 	 * The method now only creates an empty search document (which will return
 	 * all document)
 	 * 
-	 * @param request
-	 *            is the http request
+	 * @param context
+	 *            is the routing context of the http request
 	 * @return a json document that will be used for searching the database
 	 */
-	protected JsonObject createSearchDocument(YokeRequest request) {
+	protected JsonObject createSearchDocument(RoutingContext context) {
 		return new JsonObject();
 	}
 
@@ -121,108 +117,95 @@ public abstract class ListRoute extends Route {
 	 * Create an request for the async Mongo persistor from the document
 	 * submitted in the request
 	 * 
-	 * @param request is the request passed from the client
+	 * @param request
+	 *            is the request passed from the client
 	 */
-	protected final void createSearchRequest(YokeRequest request) {
+	protected final void createSearchRequest(RoutingContext context) {
 		// FIXME this makes no sense, get requests don't have a json body!
-		JsonObject doc = createSearchDocument(request);
+		JsonObject doc = createSearchDocument(context);
 
-		List<Entry<String, String>> params = request.params().entries();
+		MultiMap params = context.request().params();
 
-		String queryValue = request.getParameter("q");
-		
+		String queryValue = params.get("q");
+
 		if (queryValue != null && !queryValue.isEmpty()) {
 			try {
 				String value = URLDecoder.decode(queryValue, "UTF-8");
-			
+
 				JsonObject obj = new JsonObject(value);
-				
+
 				doc.mergeIn(obj);
-			
-				
+
 			} catch (Exception e) {
 				System.out.println(e.getMessage());
 				// Query string is invalid, just ignore it;
 			}
 		}
-		
-		JsonObject find = SearchUtil.createSearchDocument(doc, collection,
-				params);
 
-		mongoHelper.sendFind(find,
-				results -> respondFindResults(results, request));
-
-	}
-
-	protected JsonObject createSortDoc(String sortStr) {
-		return SearchUtil.createSortDoc(sortStr);
-	}
-
-	protected void respondDeleteResults(AsyncResult<Message<Integer>> results,
-			YokeRequest request) {
-
-		if (results.succeeded()) {
-			request.response().setChunked(true).setStatusCode(SUCCESS_OK).end();
-		} else {
-			ReplyException ex = (ReplyException) results.cause();
-			replyError(request, ERROR_SERVER_GENERAL_ERROR, ex);
-		}
-
-		// log.debug("Returned results from database: " + results.size());
+		// FIXME add options for limit, skip and sorting again!!!!
+		mongoClient
+				.findObservable(queryValue, doc)
+				.doOnError(
+						e -> replyError(context,
+								Route.ERROR_SERVER_GENERAL_ERROR,
+								e.getMessage()))
+				.subscribe(results -> respondFindResults(results, context));
 
 	}
 
-	protected void respondCreateResults(
-			AsyncResult<Message<JsonObject>> results, YokeRequest request) {
+	/*
+	 * protected JsonObject createSortDoc(String sortStr) { return
+	 * SearchUtil.createSortDoc(sortStr); }
+	 */
 
-		if (results.succeeded()) {
-			String id = CreateUtil.getIdFromResults(results);
+	protected void respondDeleteResults(Void results, RoutingContext context) {
 
-			YokeResponse response = request.response();
+		HttpServerRequest request = context.request();
 
-			response.headers().add("Location",
-					String.format("%s/%s", getBindPath(), id));
-
-			response.setChunked(true).setStatusCode(SUCCESS_CREATED).end();
-		} else {
-			ReplyException ex = (ReplyException) results.cause();
-			replyError(request, ERROR_SERVER_GENERAL_ERROR, ex);
-		}
-
-		// log.debug("Returned results from database: " + results.size());
+		request.response().setChunked(true).setStatusCode(SUCCESS_OK).end();
 
 	}
 
-	protected JsonArray convertFindResults(String version, JsonArray results)
-			throws ProcessingException {
+	protected void respondCreateResults(String result,
+			RoutingContext context) {
+
+		HttpServerRequest request = context.request();
+
+		String id = result; //result.getString("result_id");
+
+		HttpServerResponse response = request.response();
+
+		// FIXME fill other parameters from request!!
+		response.headers().add("Location",
+				String.format("%s/%s", getBindPath(), id));
+
+		response.setChunked(true).setStatusCode(SUCCESS_CREATED).end();
+
+	}
+
+	protected List<JsonObject> convertFindResults(String version,
+			List<JsonObject> results) throws ProcessingException {
 		return results;
 	}
 
-	protected void respondFindResults(AsyncResult<Message<JsonArray>> result,
-			YokeRequest request) {
+	protected void respondFindResults(List<JsonObject> results,
+			RoutingContext context) {
 
-		if (result.succeeded()) {
+		String version = getVersionFromHeader(context);
 
-			JsonArray results = result.result().body();
+		List<JsonObject> convertedResults = null;
 
-			String version = getVersionFromHeader(request);
-
-			JsonArray convertedResults = null;
-
-			try {
-				convertedResults = convertFindResults(version, results);
-			} catch (ProcessingException pe) {
-				replyError(request, ERROR_CLIENT_METHOD_UNACCEPTABLE, pe);
-				return;
-			}
-
-			respondJsonResults(request, convertedResults);
-
-		} else {
-			ReplyException ex = (ReplyException) result.cause();
-			replyError(request, ERROR_SERVER_GENERAL_ERROR, ex);
+		try {
+			convertedResults = convertFindResults(version, results);
+		} catch (ProcessingException pe) {
+			replyError(context, ERROR_CLIENT_METHOD_UNACCEPTABLE, pe);
+			return;
 		}
-	}
 
+		JsonArray resultArray = new JsonArray(convertedResults);
+
+		respondJsonResults(context, resultArray);
+
+	}
 
 }

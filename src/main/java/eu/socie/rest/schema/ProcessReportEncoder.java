@@ -3,7 +3,7 @@
  */
 package eu.socie.rest.schema;
 
-import org.vertx.java.core.json.JsonObject;
+import io.vertx.core.json.JsonObject;
 
 import com.github.fge.jsonschema.core.report.ProcessingMessage;
 import com.github.fge.jsonschema.core.report.ProcessingReport;
@@ -27,7 +27,7 @@ public class ProcessReportEncoder {
 	private static void addMessage(JsonObject base, ProcessingMessage msg) {
 		JsonObject msgNode = new JsonObject(msg.asJson().toString());
 		
-		base.putObject(msg.getLogLevel().name(), msgNode);
+		base.put(msg.getLogLevel().name(), msgNode);
 	}
 	
 }

@@ -3,19 +3,19 @@
  */
 package eu.socie.rest.schema;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.VertxException;
+import io.vertx.core.json.JsonObject;
+import io.vertx.rxjava.core.Vertx;
+import io.vertx.rxjava.core.buffer.Buffer;
+import io.vertx.rxjava.core.http.HttpClient;
+import io.vertx.rxjava.core.http.HttpClientRequest;
+import io.vertx.rxjava.core.http.HttpClientResponse;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.regex.Pattern;
-
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxException;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpClient;
-import org.vertx.java.core.http.HttpClientRequest;
-import org.vertx.java.core.http.HttpClientResponse;
-import org.vertx.java.core.json.JsonObject;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.fge.jackson.JsonLoader;
@@ -68,12 +68,12 @@ public class JsonSchemaValidator {
 		if (resourceUrl != null) {
 			
 			HttpClient client = vertx.createHttpClient();
-			client.setHost(resourceUrl.getHost());
-			client.setPort(resourceUrl.getPort());
+			String host = resourceUrl.getHost();
+			int port = resourceUrl.getPort();
 			
 			String url = resourceUrl.getPath();  
-
-			HttpClientRequest request = client.get(url, r -> handleSchemaResponse(r, url));
+		
+			HttpClientRequest request = client.get(port, host, url, r -> handleSchemaResponse(r, url));
 			request.headers().add("Accept", "application/json");
 			request.end();
 			

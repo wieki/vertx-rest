@@ -3,7 +3,8 @@
  */
 package eu.socie.rest.exception;
 
-import org.vertx.java.core.VertxException;
+import io.vertx.core.VertxException;
+
 
 /**
  * @author Bram Wiekens

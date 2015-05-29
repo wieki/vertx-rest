@@ -3,17 +3,6 @@
  */
 package eu.socie.rest.mongo;
 
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.json.JsonArray;
-import org.vertx.java.core.json.JsonObject;
-
-import eu.socie.mongo_async_persistor.AsyncMongoPersistor;
-import eu.socie.mongo_async_persistor.util.MongoFileUtil;
-import eu.socie.rest.Route;
 
 /**
  * This class aims to simplify sending events to the database
@@ -24,7 +13,7 @@ import eu.socie.rest.Route;
  */
 public class MongoHelper {
 
-	Vertx vertx;
+/*	Vertx vertx; 
 
 	public MongoHelper(Vertx vertx) {
 		this.vertx = vertx;
@@ -88,6 +77,6 @@ public class MongoHelper {
 				fileBuffer,
 				Route.TIMEOUT,
 				handler);
-	}
+	}*/
 
 }
