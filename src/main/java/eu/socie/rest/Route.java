@@ -11,9 +11,10 @@ import io.vertx.rxjava.core.MultiMap;
 import io.vertx.rxjava.core.Vertx;
 import io.vertx.rxjava.core.http.HttpServerRequest;
 import io.vertx.rxjava.core.http.HttpServerResponse;
-import io.vertx.rxjava.ext.apex.Router;
-import io.vertx.rxjava.ext.apex.RoutingContext;
+import io.vertx.rxjava.core.shareddata.LocalMap;
 import io.vertx.rxjava.ext.mongo.MongoClient;
+import io.vertx.rxjava.ext.web.Router;
+import io.vertx.rxjava.ext.web.RoutingContext;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -92,9 +93,6 @@ public class Route implements ServerReadyListener {
 	public Route(String path, Vertx vertx) {
 		this(path, vertx, VERSION_PATTERN);
 
-		
-		// FIXME init mongo client
-
 		validator = null;
 	}
 
@@ -123,6 +121,12 @@ public class Route implements ServerReadyListener {
 
 		logger = LoggerFactory
 				.getLogger(getClass());
+		
+		// FIXME init mongo client
+		LocalMap<String, JsonObject> map = vertx.sharedData().getLocalMap("app_config");
+		JsonObject dbConfig = map.get("db_config");
+		
+		mongoClient = MongoClient.createShared(vertx, dbConfig);
 	}
 
 	public String getPath() {

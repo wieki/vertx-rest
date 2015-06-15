@@ -4,7 +4,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava.core.Vertx;
 import io.vertx.rxjava.core.http.HttpServerRequest;
 import io.vertx.rxjava.core.http.HttpServerResponse;
-import io.vertx.rxjava.ext.apex.RoutingContext;
+import io.vertx.rxjava.ext.web.RoutingContext;
 import eu.socie.rest.exception.ProcessingException;
 import eu.socie.rest.exception.RestException;
 
@@ -172,17 +172,35 @@ public abstract class EntityRoute extends Route {
 	 *            is the request passed from the client
 	 */
 	protected final void createSearchRequest(RoutingContext context) {
+		HttpServerRequest request = context.request();
+		String id = request.getParam(getIdParam());
+
 		JsonObject find = new JsonObject();
+
+		find.put("_id", id);
 
 		// Get all fields
 		JsonObject allFields = new JsonObject();
 
-		mongoClient
-				.findOneObservable(collection, find, allFields)
-				.doOnError(
-						ex -> replyError(context, ERROR_SERVER_GENERAL_ERROR,
-								ex.getMessage()))
-				.subscribe(results -> respondFindResults(results, context));
+		mongoClient.findOne("communities",
+				new JsonObject().put("_id", "510a685efc6d53b4a258ccb4"), null,
+				res2 -> {
+					if (res2.succeeded()) {
+
+						System.out.println("bla:" + res2.result());
+
+					} else {
+						res2.cause().printStackTrace();
+					}
+				});
+
+		/*
+		 * mongoClient .findOneObservable(collection, find, allFields)
+		 * .doOnError( ex -> replyError(context, ERROR_SERVER_GENERAL_ERROR,
+		 * ex.getMessage())) .subscribe(results -> respondFindResults(results,
+		 * context));
+		 */
+
 	}
 
 	protected void respondDeleteResults(Void result, RoutingContext context) {
@@ -193,8 +211,7 @@ public abstract class EntityRoute extends Route {
 
 	}
 
-	protected void responseUpdateResults(Void results,
-			RoutingContext context) {
+	protected void responseUpdateResults(Void results, RoutingContext context) {
 
 		HttpServerRequest request = context.request();
 		HttpServerResponse response = request.response();

@@ -7,7 +7,7 @@ import io.vertx.rxjava.core.MultiMap;
 import io.vertx.rxjava.core.Vertx;
 import io.vertx.rxjava.core.http.HttpServerRequest;
 import io.vertx.rxjava.core.http.HttpServerResponse;
-import io.vertx.rxjava.ext.apex.RoutingContext;
+import io.vertx.rxjava.ext.web.RoutingContext;
 
 import java.net.URLDecoder;
 import java.util.List;
@@ -141,10 +141,10 @@ public abstract class ListRoute extends Route {
 				// Query string is invalid, just ignore it;
 			}
 		}
-
+		
 		// FIXME add options for limit, skip and sorting again!!!!
 		mongoClient
-				.findObservable(queryValue, doc)
+				.findObservable(collection, doc)
 				.doOnError(
 						e -> replyError(context,
 								Route.ERROR_SERVER_GENERAL_ERROR,
